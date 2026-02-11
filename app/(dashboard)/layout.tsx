@@ -12,14 +12,14 @@ export default function DashboardLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const { loggedIn, loading } = useAuth();
+  const { user, loading } = useAuth();
   const router = useRouter();
 
   React.useEffect(() => {
-    if (!loading && !loggedIn) {
+    if (!loading && !user) {
       router.push('/login');
     }
-  }, [loggedIn, loading, router]);
+  }, [user, loading, router]);
 
   if (loading) {
     return (
@@ -36,7 +36,7 @@ export default function DashboardLayout({
     );
   }
 
-  if (!loggedIn) {
+  if (!user) {
     return null;
   }
 

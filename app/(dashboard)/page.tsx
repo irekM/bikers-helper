@@ -11,7 +11,7 @@ import type { DashboardStats } from '@/types';
 export default function DashboardPage() {
   const { user } = useAuth();
   const { products, loading, error, refreshProduct, deleteProduct } = useProducts({
-    userId: user?.username,
+    userId: user?.id,
   });
 
   // Calculate stats from products

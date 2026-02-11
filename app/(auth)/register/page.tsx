@@ -14,22 +14,23 @@ import {
 import { TwoWheeler as MotorcycleIcon } from '@mui/icons-material';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { registerUser } from '@/lib/firebase';
 import { useAuth } from '@/hooks/useAuth';
 
 export default function RegisterPage() {
   const router = useRouter();
-  const { setUser } = useAuth();
-  const [username, setUsername] = useState('');
+  const { refreshUser } = useAuth();
+  const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const handleRegister = async (e: React.FormEvent) => {
+  const handleEmailRegister = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
 
-    if (!username || !password || !confirmPassword) {
+    if (!email || !password || !confirmPassword) {
       setError('Wypełnij wszystkie pola');
       return;
     }
@@ -46,22 +47,12 @@ export default function RegisterPage() {
 
     try {
       setLoading(true);
-      const response = await fetch('/api/auth/register', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username, password }),
-      });
-      const data = await response.json();
-
-      if (!response.ok || !data.success) {
-        setError(data?.error?.message || 'Błąd rejestracji. Spróbuj ponownie.');
-        return;
-      }
-
-      setUser({ username: data.data.username });
-      router.push('/dashboard');
+      await registerUser(email, password);
+      refreshUser(); // Odśwież stan użytkownika w kontekście
+      router.push('/');
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : 'Błąd rejestracji. Spróbuj ponownie.');
+      const errorMessage = err instanceof Error ? err.message : 'Błąd rejestracji';
+      setError(errorMessage);
     } finally {
       setLoading(false);
     }
@@ -102,12 +93,13 @@ export default function RegisterPage() {
         )}
 
         {/* Email Register Form */}
-        <Box component="form" onSubmit={handleRegister}>
+        <Box component="form" onSubmit={handleEmailRegister}>
           <TextField
-            label="Nazwa użytkownika"
+            label="Email"
+            type="email"
             fullWidth
-            value={username}
-            onChange={(e) => setUsername(e.target.value)}
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
             disabled={loading}
             sx={{ mb: 2 }}
           />

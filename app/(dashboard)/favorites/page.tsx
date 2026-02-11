@@ -9,7 +9,7 @@ import ProductList from '@/components/products/ProductList';
 export default function FavoritesPage() {
   const { user } = useAuth();
   const { products, loading, error, refreshProduct, deleteProduct } = useProducts({
-    userId: user?.username,
+    userId: user?.id,
   });
 
   return (

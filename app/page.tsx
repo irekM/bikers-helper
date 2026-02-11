@@ -27,15 +27,15 @@ import { useAuth } from '@/hooks/useAuth';
 import { useRouter } from 'next/navigation';
 
 export default function Home() {
-  const { loggedIn, loading } = useAuth();
+  const { user, loading } = useAuth();
   const router = useRouter();
 
   // Redirect if already logged in
   React.useEffect(() => {
-    if (!loading && loggedIn) {
-      router.push('/dashboard');
+    if (!loading && user) {
+      router.push('/');
     }
-  }, [loggedIn, loading, router]);
+  }, [user, loading, router]);
 
   const features = [
     {

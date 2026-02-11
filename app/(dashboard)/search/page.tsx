@@ -10,7 +10,7 @@ import ProductList from '@/components/products/ProductList';
 export default function SearchPage() {
   const { user } = useAuth();
   const { products, addProduct, refreshProduct, deleteProduct } = useProducts({
-    userId: user?.username,
+    userId: user?.id,
   });
 
   // Get recently added products (last 3)

@@ -17,16 +17,6 @@ import {
   DocumentData,
   setDoc,
 } from 'firebase/firestore';
-import {
-  getAuth,
-  signInWithEmailAndPassword,
-  createUserWithEmailAndPassword,
-  signInWithPopup,
-  GoogleAuthProvider,
-  signOut as firebaseSignOut,
-  onAuthStateChanged,
-  User as FirebaseUser,
-} from 'firebase/auth';
 import type {
   User,
   Product,
@@ -48,64 +38,145 @@ const firebaseConfig = {
 // Initialize Firebase (prevent multiple initializations)
 const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApps()[0];
 export const db = getFirestore(app);
-export const auth = getAuth(app);
-const googleProvider = new GoogleAuthProvider();
 
 // ============================================
-// Authentication Functions
+// Klucz do localStorage dla sesji użytkownika
+// ============================================
+const AUTH_STORAGE_KEY = 'bikers_helper_user';
+
+// ============================================
+// PROSTA AUTENTYKACJA (bez hashowania - tylko do nauki!)
+// Hasła są przechowywane jako plain text w Firestore
+// ⚠️ NIGDY nie rób tego w produkcji!
 // ============================================
 
-export async function signInWithEmail(email: string, password: string) {
-  return signInWithEmailAndPassword(auth, email, password);
+/**
+ * Rejestracja nowego użytkownika
+ * Zapisuje email i hasło w plain text do kolekcji 'users'
+ */
+export async function registerUser(email: string, password: string): Promise<User> {
+  // Sprawdź czy użytkownik już istnieje
+  const usersRef = collection(db, 'users');
+  const q = query(usersRef, where('email', '==', email));
+  const existingUsers = await getDocs(q);
+
+  if (!existingUsers.empty) {
+    throw new Error('Użytkownik z tym emailem już istnieje');
+  }
+
+  // Utwórz nowego użytkownika z hasłem w plain text
+  const now = Timestamp.now();
+  const userData = {
+    email: email,
+    password: password, // ⚠️ Plain text - tylko do nauki!
+    displayName: '',
+    photoURL: '',
+    preferences: {
+      emailNotifications: true,
+      pushNotifications: false,
+      checkFrequency: 'daily',
+      theme: 'system',
+    },
+    createdAt: now,
+    updatedAt: now,
+  };
+
+  const docRef = await addDoc(usersRef, userData);
+
+  const user: User = {
+    id: docRef.id,
+    email: userData.email,
+    displayName: userData.displayName,
+    photoURL: userData.photoURL,
+    preferences: userData.preferences as UserPreferences,
+    createdAt: now.toDate(),
+    updatedAt: now.toDate(),
+  };
+
+  // Zapisz użytkownika w localStorage (sesja)
+  if (typeof window !== 'undefined') {
+    localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(user));
+  }
+
+  return user;
 }
 
-export async function signUpWithEmail(email: string, password: string) {
-  const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-  // Create user document in Firestore
-  await createUserDocument(userCredential.user);
-  return userCredential;
+/**
+ * Logowanie użytkownika
+ * Sprawdza email i hasło w kolekcji 'users'
+ */
+export async function loginUser(email: string, password: string): Promise<User> {
+  const usersRef = collection(db, 'users');
+  const q = query(usersRef, where('email', '==', email));
+  const snapshot = await getDocs(q);
+
+  if (snapshot.empty) {
+    throw new Error('Nie znaleziono użytkownika o podanym emailu');
+  }
+
+  const userDoc = snapshot.docs[0];
+  const userData = userDoc.data();
+
+  // Sprawdź hasło (plain text comparison)
+  if (userData.password !== password) {
+    throw new Error('Nieprawidłowe hasło');
+  }
+
+  const user: User = {
+    id: userDoc.id,
+    email: userData.email,
+    displayName: userData.displayName || '',
+    photoURL: userData.photoURL || '',
+    preferences: userData.preferences,
+    createdAt: userData.createdAt.toDate(),
+    updatedAt: userData.updatedAt.toDate(),
+  };
+
+  // Zapisz użytkownika w localStorage (sesja)
+  if (typeof window !== 'undefined') {
+    localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(user));
+  }
+
+  return user;
 }
 
-export async function signInWithGoogle() {
-  const userCredential = await signInWithPopup(auth, googleProvider);
-  // Create user document if it doesn't exist
-  await createUserDocument(userCredential.user);
-  return userCredential;
+/**
+ * Wylogowanie użytkownika
+ * Usuwa sesję z localStorage
+ */
+export async function logoutUser(): Promise<void> {
+  if (typeof window !== 'undefined') {
+    localStorage.removeItem(AUTH_STORAGE_KEY);
+  }
 }
 
-export async function signOut() {
-  return firebaseSignOut(auth);
-}
+/**
+ * Pobierz aktualnie zalogowanego użytkownika z localStorage
+ */
+export function getCurrentUser(): User | null {
+  if (typeof window === 'undefined') {
+    return null;
+  }
 
-export function onAuthChange(callback: (user: FirebaseUser | null) => void) {
-  return onAuthStateChanged(auth, callback);
+  const stored = localStorage.getItem(AUTH_STORAGE_KEY);
+  if (!stored) {
+    return null;
+  }
+
+  try {
+    const user = JSON.parse(stored);
+    // Konwertuj stringi dat z powrotem na obiekty Date
+    user.createdAt = new Date(user.createdAt);
+    user.updatedAt = new Date(user.updatedAt);
+    return user as User;
+  } catch {
+    return null;
+  }
 }
 
 // ============================================
 // User Functions
 // ============================================
-
-async function createUserDocument(firebaseUser: FirebaseUser): Promise<void> {
-  const userRef = doc(db, 'users', firebaseUser.uid);
-  const userSnap = await getDoc(userRef);
-
-  if (!userSnap.exists()) {
-    const userData = {
-      email: firebaseUser.email,
-      displayName: firebaseUser.displayName || '',
-      photoURL: firebaseUser.photoURL || '',
-      preferences: {
-        emailNotifications: true,
-        pushNotifications: false,
-        checkFrequency: 'daily',
-        theme: 'system',
-      },
-      createdAt: Timestamp.now(),
-      updatedAt: Timestamp.now(),
-    };
-    await setDoc(userRef, userData);
-  }
-}
 
 export async function getUserData(userId: string): Promise<User | null> {
   const userRef = doc(db, 'users', userId);

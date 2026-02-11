@@ -14,43 +14,34 @@ import {
 import { TwoWheeler as MotorcycleIcon } from '@mui/icons-material';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { loginUser } from '@/lib/firebase';
 import { useAuth } from '@/hooks/useAuth';
 
 export default function LoginPage() {
   const router = useRouter();
-  const { setUser } = useAuth();
-  const [username, setUsername] = useState('');
+  const { refreshUser } = useAuth();
+  const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const handleLogin = async (e: React.FormEvent) => {
+  const handleEmailLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
 
-    if (!username || !password) {
+    if (!email || !password) {
       setError('Wypełnij wszystkie pola');
       return;
     }
 
     try {
       setLoading(true);
-      const response = await fetch('/api/auth/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username, password }),
-      });
-      const data = await response.json();
-
-      if (!response.ok || !data.success) {
-        setError(data?.error?.message || 'Błąd logowania. Spróbuj ponownie.');
-        return;
-      }
-
-      setUser({ username: data.data.username });
-      router.push('/dashboard');
+      await loginUser(email, password);
+      refreshUser(); // Odśwież stan użytkownika w kontekście
+      router.push('/');
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : 'Błąd logowania. Spróbuj ponownie.');
+      const errorMessage = err instanceof Error ? err.message : 'Błąd logowania';
+      setError(errorMessage);
     } finally {
       setLoading(false);
     }
@@ -91,12 +82,13 @@ export default function LoginPage() {
         )}
 
         {/* Email Login Form */}
-        <Box component="form" onSubmit={handleLogin}>
+        <Box component="form" onSubmit={handleEmailLogin}>
           <TextField
-            label="Nazwa użytkownika"
+            label="Email"
+            type="email"
             fullWidth
-            value={username}
-            onChange={(e) => setUsername(e.target.value)}
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
             disabled={loading}
             sx={{ mb: 2 }}
           />

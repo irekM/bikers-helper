@@ -1,68 +1,50 @@
 'use client';
 
-import React, { createContext, useContext, useEffect, useMemo, useState } from 'react';
-
-interface AuthUser {
-  username: string;
-}
+import React, { createContext, useContext, useEffect, useState } from 'react';
+import { getCurrentUser, logoutUser } from '@/lib/firebase';
+import type { User } from '@/types';
 
 interface AuthContextType {
-  user: AuthUser | null;
-  loggedIn: boolean;
+  user: User | null;
   loading: boolean;
-  setUser: (user: AuthUser | null) => void;
-  signOut: () => void;
+  signOut: () => Promise<void>;
+  refreshUser: () => void;
 }
 
-const STORAGE_KEY = 'bikers-helper-auth';
-
-const AuthContext = createContext<AuthContextType | undefined>(undefined);
+const AuthContext = createContext<AuthContextType>({
+  user: null,
+  loading: true,
+  signOut: async () => {},
+  refreshUser: () => {},
+});
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [user, setUserState] = useState<AuthUser | null>(null);
+  const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
 
+  // Funkcja do odświeżenia stanu użytkownika z localStorage
+  const refreshUser = () => {
+    const currentUser = getCurrentUser();
+    setUser(currentUser);
+  };
+
   useEffect(() => {
-    const stored = typeof window !== 'undefined' ? localStorage.getItem(STORAGE_KEY) : null;
-    if (stored) {
-      try {
-        const parsed = JSON.parse(stored) as AuthUser;
-        if (parsed?.username) {
-          setUserState(parsed);
-        }
-      } catch {
-        localStorage.removeItem(STORAGE_KEY);
-      }
-    }
+    // Przy załadowaniu sprawdź czy użytkownik jest zalogowany
+    const currentUser = getCurrentUser();
+    setUser(currentUser);
     setLoading(false);
   }, []);
 
-  const setUser = (nextUser: AuthUser | null) => {
-    setUserState(nextUser);
-    if (typeof window === 'undefined') return;
-    if (nextUser) {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(nextUser));
-    } else {
-      localStorage.removeItem(STORAGE_KEY);
-    }
-  };
-
-  const signOut = () => {
+  const signOut = async () => {
+    await logoutUser();
     setUser(null);
   };
 
-  const value = useMemo(
-    () => ({
-      user,
-      loggedIn: Boolean(user),
-      loading,
-      setUser,
-      signOut,
-    }),
-    [user, loading]
+  return (
+    <AuthContext.Provider value={{ user, loading, signOut, refreshUser }}>
+      {children}
+    </AuthContext.Provider>
   );
-
-  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
 
 export function useAuth() {
