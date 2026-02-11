@@ -8,20 +8,18 @@ import {
   Typography,
   TextField,
   Button,
-  Divider,
   Alert,
   CircularProgress,
 } from '@mui/material';
-import {
-  TwoWheeler as MotorcycleIcon,
-  Google as GoogleIcon,
-} from '@mui/icons-material';
+import { TwoWheeler as MotorcycleIcon } from '@mui/icons-material';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { signUpWithEmail, signInWithGoogle } from '@/lib/firebase';
+import { registerUser } from '@/lib/firebase';
+import { useAuth } from '@/hooks/useAuth';
 
 export default function RegisterPage() {
   const router = useRouter();
+  const { refreshUser } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -49,33 +47,12 @@ export default function RegisterPage() {
 
     try {
       setLoading(true);
-      await signUpWithEmail(email, password);
-      router.push('/dashboard');
+      await registerUser(email, password);
+      refreshUser(); // Odśwież stan użytkownika w kontekście
+      router.push('/');
     } catch (err: unknown) {
       const errorMessage = err instanceof Error ? err.message : 'Błąd rejestracji';
-      if (errorMessage.includes('email-already-in-use')) {
-        setError('Ten adres email jest już zajęty');
-      } else if (errorMessage.includes('invalid-email')) {
-        setError('Nieprawidłowy adres email');
-      } else if (errorMessage.includes('weak-password')) {
-        setError('Hasło jest za słabe');
-      } else {
-        setError('Błąd rejestracji. Spróbuj ponownie.');
-      }
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleGoogleRegister = async () => {
-    setError(null);
-
-    try {
-      setLoading(true);
-      await signInWithGoogle();
-      router.push('/dashboard');
-    } catch (err) {
-      setError('Błąd rejestracji przez Google. Spróbuj ponownie.');
+      setError(errorMessage);
     } finally {
       setLoading(false);
     }
@@ -114,25 +91,6 @@ export default function RegisterPage() {
             {error}
           </Alert>
         )}
-
-        {/* Google Register */}
-        <Button
-          variant="outlined"
-          fullWidth
-          size="large"
-          startIcon={<GoogleIcon />}
-          onClick={handleGoogleRegister}
-          disabled={loading}
-          sx={{ mb: 3 }}
-        >
-          Kontynuuj z Google
-        </Button>
-
-        <Divider sx={{ mb: 3 }}>
-          <Typography variant="body2" color="text.secondary">
-            lub
-          </Typography>
-        </Divider>
 
         {/* Email Register Form */}
         <Box component="form" onSubmit={handleEmailRegister}>

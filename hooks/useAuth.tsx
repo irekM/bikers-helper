@@ -1,54 +1,47 @@
 'use client';
 
 import React, { createContext, useContext, useEffect, useState } from 'react';
-import { User as FirebaseUser } from 'firebase/auth';
-import { onAuthChange, getUserData, signOut as firebaseSignOut } from '@/lib/firebase';
+import { getCurrentUser, logoutUser } from '@/lib/firebase';
 import type { User } from '@/types';
 
 interface AuthContextType {
-  firebaseUser: FirebaseUser | null;
   user: User | null;
   loading: boolean;
   signOut: () => Promise<void>;
+  refreshUser: () => void;
 }
 
 const AuthContext = createContext<AuthContextType>({
-  firebaseUser: null,
   user: null,
   loading: true,
   signOut: async () => {},
+  refreshUser: () => {},
 });
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [firebaseUser, setFirebaseUser] = useState<FirebaseUser | null>(null);
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    const unsubscribe = onAuthChange(async (fbUser) => {
-      setFirebaseUser(fbUser);
-      
-      if (fbUser) {
-        const userData = await getUserData(fbUser.uid);
-        setUser(userData);
-      } else {
-        setUser(null);
-      }
-      
-      setLoading(false);
-    });
+  // Funkcja do odświeżenia stanu użytkownika z localStorage
+  const refreshUser = () => {
+    const currentUser = getCurrentUser();
+    setUser(currentUser);
+  };
 
-    return () => unsubscribe();
+  useEffect(() => {
+    // Przy załadowaniu sprawdź czy użytkownik jest zalogowany
+    const currentUser = getCurrentUser();
+    setUser(currentUser);
+    setLoading(false);
   }, []);
 
   const signOut = async () => {
-    await firebaseSignOut();
-    setFirebaseUser(null);
+    await logoutUser();
     setUser(null);
   };
 
   return (
-    <AuthContext.Provider value={{ firebaseUser, user, loading, signOut }}>
+    <AuthContext.Provider value={{ user, loading, signOut, refreshUser }}>
       {children}
     </AuthContext.Provider>
   );

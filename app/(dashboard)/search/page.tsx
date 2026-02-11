@@ -8,9 +8,9 @@ import AddProductForm from '@/components/products/AddProductForm';
 import ProductList from '@/components/products/ProductList';
 
 export default function SearchPage() {
-  const { firebaseUser } = useAuth();
+  const { user } = useAuth();
   const { products, addProduct, refreshProduct, deleteProduct } = useProducts({
-    userId: firebaseUser?.uid,
+    userId: user?.id,
   });
 
   // Get recently added products (last 3)

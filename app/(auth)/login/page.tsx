@@ -8,20 +8,18 @@ import {
   Typography,
   TextField,
   Button,
-  Divider,
   Alert,
   CircularProgress,
 } from '@mui/material';
-import {
-  TwoWheeler as MotorcycleIcon,
-  Google as GoogleIcon,
-} from '@mui/icons-material';
+import { TwoWheeler as MotorcycleIcon } from '@mui/icons-material';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { signInWithEmail, signInWithGoogle } from '@/lib/firebase';
+import { loginUser } from '@/lib/firebase';
+import { useAuth } from '@/hooks/useAuth';
 
 export default function LoginPage() {
   const router = useRouter();
+  const { refreshUser } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
@@ -38,31 +36,12 @@ export default function LoginPage() {
 
     try {
       setLoading(true);
-      await signInWithEmail(email, password);
-      router.push('/dashboard');
+      await loginUser(email, password);
+      refreshUser(); // Odśwież stan użytkownika w kontekście
+      router.push('/');
     } catch (err: unknown) {
       const errorMessage = err instanceof Error ? err.message : 'Błąd logowania';
-      if (errorMessage.includes('user-not-found')) {
-        setError('Nie znaleziono użytkownika o podanym adresie email');
-      } else if (errorMessage.includes('wrong-password')) {
-        setError('Nieprawidłowe hasło');
-      } else {
-        setError('Błąd logowania. Spróbuj ponownie.');
-      }
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleGoogleLogin = async () => {
-    setError(null);
-
-    try {
-      setLoading(true);
-      await signInWithGoogle();
-      router.push('/dashboard');
-    } catch (err) {
-      setError('Błąd logowania przez Google. Spróbuj ponownie.');
+      setError(errorMessage);
     } finally {
       setLoading(false);
     }
@@ -101,25 +80,6 @@ export default function LoginPage() {
             {error}
           </Alert>
         )}
-
-        {/* Google Login */}
-        <Button
-          variant="outlined"
-          fullWidth
-          size="large"
-          startIcon={<GoogleIcon />}
-          onClick={handleGoogleLogin}
-          disabled={loading}
-          sx={{ mb: 3 }}
-        >
-          Kontynuuj z Google
-        </Button>
-
-        <Divider sx={{ mb: 3 }}>
-          <Typography variant="body2" color="text.secondary">
-            lub
-          </Typography>
-        </Divider>
 
         {/* Email Login Form */}
         <Box component="form" onSubmit={handleEmailLogin}>
