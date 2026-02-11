@@ -33,7 +33,7 @@ export default function Home() {
   // Redirect if already logged in
   React.useEffect(() => {
     if (!loading && user) {
-      router.push('/');
+      router.push('/dashboard');
     }
   }, [user, loading, router]);
 

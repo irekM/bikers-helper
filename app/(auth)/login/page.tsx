@@ -37,8 +37,8 @@ export default function LoginPage() {
     try {
       setLoading(true);
       await loginUser(email, password);
-      refreshUser(); // Odśwież stan użytkownika w kontekście
-      router.push('/');
+      refreshUser();
+      router.push('/dashboard');
     } catch (err: unknown) {
       const errorMessage = err instanceof Error ? err.message : 'Błąd logowania';
       setError(errorMessage);
