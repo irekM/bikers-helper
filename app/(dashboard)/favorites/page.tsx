@@ -7,9 +7,9 @@ import { useProducts } from '@/hooks/useProducts';
 import ProductList from '@/components/products/ProductList';
 
 export default function FavoritesPage() {
-  const { firebaseUser } = useAuth();
+  const { user } = useAuth();
   const { products, loading, error, refreshProduct, deleteProduct } = useProducts({
-    userId: firebaseUser?.uid,
+    userId: user?.username,
   });
 
   return (

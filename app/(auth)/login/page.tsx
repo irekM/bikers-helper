@@ -8,61 +8,49 @@ import {
   Typography,
   TextField,
   Button,
-  Divider,
   Alert,
   CircularProgress,
 } from '@mui/material';
-import {
-  TwoWheeler as MotorcycleIcon,
-  Google as GoogleIcon,
-} from '@mui/icons-material';
+import { TwoWheeler as MotorcycleIcon } from '@mui/icons-material';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { signInWithEmail, signInWithGoogle } from '@/lib/firebase';
+import { useAuth } from '@/hooks/useAuth';
 
 export default function LoginPage() {
   const router = useRouter();
-  const [email, setEmail] = useState('');
+  const { setUser } = useAuth();
+  const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const handleEmailLogin = async (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
 
-    if (!email || !password) {
+    if (!username || !password) {
       setError('Wypełnij wszystkie pola');
       return;
     }
 
     try {
       setLoading(true);
-      await signInWithEmail(email, password);
+      const response = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username, password }),
+      });
+      const data = await response.json();
+
+      if (!response.ok || !data.success) {
+        setError(data?.error?.message || 'Błąd logowania. Spróbuj ponownie.');
+        return;
+      }
+
+      setUser({ username: data.data.username });
       router.push('/dashboard');
     } catch (err: unknown) {
-      const errorMessage = err instanceof Error ? err.message : 'Błąd logowania';
-      if (errorMessage.includes('user-not-found')) {
-        setError('Nie znaleziono użytkownika o podanym adresie email');
-      } else if (errorMessage.includes('wrong-password')) {
-        setError('Nieprawidłowe hasło');
-      } else {
-        setError('Błąd logowania. Spróbuj ponownie.');
-      }
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleGoogleLogin = async () => {
-    setError(null);
-
-    try {
-      setLoading(true);
-      await signInWithGoogle();
-      router.push('/dashboard');
-    } catch (err) {
-      setError('Błąd logowania przez Google. Spróbuj ponownie.');
+      setError(err instanceof Error ? err.message : 'Błąd logowania. Spróbuj ponownie.');
     } finally {
       setLoading(false);
     }
@@ -102,33 +90,13 @@ export default function LoginPage() {
           </Alert>
         )}
 
-        {/* Google Login */}
-        <Button
-          variant="outlined"
-          fullWidth
-          size="large"
-          startIcon={<GoogleIcon />}
-          onClick={handleGoogleLogin}
-          disabled={loading}
-          sx={{ mb: 3 }}
-        >
-          Kontynuuj z Google
-        </Button>
-
-        <Divider sx={{ mb: 3 }}>
-          <Typography variant="body2" color="text.secondary">
-            lub
-          </Typography>
-        </Divider>
-
         {/* Email Login Form */}
-        <Box component="form" onSubmit={handleEmailLogin}>
+        <Box component="form" onSubmit={handleLogin}>
           <TextField
-            label="Email"
-            type="email"
+            label="Nazwa użytkownika"
             fullWidth
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
+            value={username}
+            onChange={(e) => setUsername(e.target.value)}
             disabled={loading}
             sx={{ mb: 2 }}
           />

@@ -27,15 +27,15 @@ import { useAuth } from '@/hooks/useAuth';
 import { useRouter } from 'next/navigation';
 
 export default function Home() {
-  const { firebaseUser, loading } = useAuth();
+  const { loggedIn, loading } = useAuth();
   const router = useRouter();
 
   // Redirect if already logged in
   React.useEffect(() => {
-    if (!loading && firebaseUser) {
+    if (!loading && loggedIn) {
       router.push('/dashboard');
     }
-  }, [firebaseUser, loading, router]);
+  }, [loggedIn, loading, router]);
 
   const features = [
     {
