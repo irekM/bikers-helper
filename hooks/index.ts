@@ -1,0 +1,3 @@
+// Export all hooks
+export { useAuth, AuthProvider } from './useAuth';
+export { useProducts } from './useProducts';
