@@ -9,9 +9,9 @@ import ProductList from '@/components/products/ProductList';
 import type { DashboardStats } from '@/types';
 
 export default function DashboardPage() {
-  const { firebaseUser } = useAuth();
+  const { user } = useAuth();
   const { products, loading, error, refreshProduct, deleteProduct } = useProducts({
-    userId: firebaseUser?.uid,
+    userId: user?.username,
   });
 
   // Calculate stats from products

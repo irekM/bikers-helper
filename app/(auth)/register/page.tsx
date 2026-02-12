@@ -8,31 +8,28 @@ import {
   Typography,
   TextField,
   Button,
-  Divider,
   Alert,
   CircularProgress,
 } from '@mui/material';
-import {
-  TwoWheeler as MotorcycleIcon,
-  Google as GoogleIcon,
-} from '@mui/icons-material';
+import { TwoWheeler as MotorcycleIcon } from '@mui/icons-material';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { signUpWithEmail, signInWithGoogle } from '@/lib/firebase';
+import { useAuth } from '@/hooks/useAuth';
 
 export default function RegisterPage() {
   const router = useRouter();
-  const [email, setEmail] = useState('');
+  const { setUser } = useAuth();
+  const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const handleEmailRegister = async (e: React.FormEvent) => {
+  const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
 
-    if (!email || !password || !confirmPassword) {
+    if (!username || !password || !confirmPassword) {
       setError('Wypełnij wszystkie pola');
       return;
     }
@@ -49,33 +46,22 @@ export default function RegisterPage() {
 
     try {
       setLoading(true);
-      await signUpWithEmail(email, password);
+      const response = await fetch('/api/auth/register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username, password }),
+      });
+      const data = await response.json();
+
+      if (!response.ok || !data.success) {
+        setError(data?.error?.message || 'Błąd rejestracji. Spróbuj ponownie.');
+        return;
+      }
+
+      setUser({ username: data.data.username });
       router.push('/dashboard');
     } catch (err: unknown) {
-      const errorMessage = err instanceof Error ? err.message : 'Błąd rejestracji';
-      if (errorMessage.includes('email-already-in-use')) {
-        setError('Ten adres email jest już zajęty');
-      } else if (errorMessage.includes('invalid-email')) {
-        setError('Nieprawidłowy adres email');
-      } else if (errorMessage.includes('weak-password')) {
-        setError('Hasło jest za słabe');
-      } else {
-        setError('Błąd rejestracji. Spróbuj ponownie.');
-      }
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleGoogleRegister = async () => {
-    setError(null);
-
-    try {
-      setLoading(true);
-      await signInWithGoogle();
-      router.push('/dashboard');
-    } catch (err) {
-      setError('Błąd rejestracji przez Google. Spróbuj ponownie.');
+      setError(err instanceof Error ? err.message : 'Błąd rejestracji. Spróbuj ponownie.');
     } finally {
       setLoading(false);
     }
@@ -115,33 +101,13 @@ export default function RegisterPage() {
           </Alert>
         )}
 
-        {/* Google Register */}
-        <Button
-          variant="outlined"
-          fullWidth
-          size="large"
-          startIcon={<GoogleIcon />}
-          onClick={handleGoogleRegister}
-          disabled={loading}
-          sx={{ mb: 3 }}
-        >
-          Kontynuuj z Google
-        </Button>
-
-        <Divider sx={{ mb: 3 }}>
-          <Typography variant="body2" color="text.secondary">
-            lub
-          </Typography>
-        </Divider>
-
         {/* Email Register Form */}
-        <Box component="form" onSubmit={handleEmailRegister}>
+        <Box component="form" onSubmit={handleRegister}>
           <TextField
-            label="Email"
-            type="email"
+            label="Nazwa użytkownika"
             fullWidth
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
+            value={username}
+            onChange={(e) => setUsername(e.target.value)}
             disabled={loading}
             sx={{ mb: 2 }}
           />

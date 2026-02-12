@@ -1,57 +1,68 @@
 'use client';
 
-import React, { createContext, useContext, useEffect, useState } from 'react';
-import { User as FirebaseUser } from 'firebase/auth';
-import { onAuthChange, getUserData, signOut as firebaseSignOut } from '@/lib/firebase';
-import type { User } from '@/types';
+import React, { createContext, useContext, useEffect, useMemo, useState } from 'react';
 
-interface AuthContextType {
-  firebaseUser: FirebaseUser | null;
-  user: User | null;
-  loading: boolean;
-  signOut: () => Promise<void>;
+interface AuthUser {
+  username: string;
 }
 
-const AuthContext = createContext<AuthContextType>({
-  firebaseUser: null,
-  user: null,
-  loading: true,
-  signOut: async () => {},
-});
+interface AuthContextType {
+  user: AuthUser | null;
+  loggedIn: boolean;
+  loading: boolean;
+  setUser: (user: AuthUser | null) => void;
+  signOut: () => void;
+}
+
+const STORAGE_KEY = 'bikers-helper-auth';
+
+const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [firebaseUser, setFirebaseUser] = useState<FirebaseUser | null>(null);
-  const [user, setUser] = useState<User | null>(null);
+  const [user, setUserState] = useState<AuthUser | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const unsubscribe = onAuthChange(async (fbUser) => {
-      setFirebaseUser(fbUser);
-      
-      if (fbUser) {
-        const userData = await getUserData(fbUser.uid);
-        setUser(userData);
-      } else {
-        setUser(null);
+    const stored = typeof window !== 'undefined' ? localStorage.getItem(STORAGE_KEY) : null;
+    if (stored) {
+      try {
+        const parsed = JSON.parse(stored) as AuthUser;
+        if (parsed?.username) {
+          setUserState(parsed);
+        }
+      } catch {
+        localStorage.removeItem(STORAGE_KEY);
       }
-      
-      setLoading(false);
-    });
-
-    return () => unsubscribe();
+    }
+    setLoading(false);
   }, []);
 
-  const signOut = async () => {
-    await firebaseSignOut();
-    setFirebaseUser(null);
+  const setUser = (nextUser: AuthUser | null) => {
+    setUserState(nextUser);
+    if (typeof window === 'undefined') return;
+    if (nextUser) {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(nextUser));
+    } else {
+      localStorage.removeItem(STORAGE_KEY);
+    }
+  };
+
+  const signOut = () => {
     setUser(null);
   };
 
-  return (
-    <AuthContext.Provider value={{ firebaseUser, user, loading, signOut }}>
-      {children}
-    </AuthContext.Provider>
+  const value = useMemo(
+    () => ({
+      user,
+      loggedIn: Boolean(user),
+      loading,
+      setUser,
+      signOut,
+    }),
+    [user, loading]
   );
+
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
 
 export function useAuth() {

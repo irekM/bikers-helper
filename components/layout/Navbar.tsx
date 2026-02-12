@@ -27,7 +27,7 @@ import { useAuth } from '@/hooks/useAuth';
 
 export default function Navbar() {
   const pathname = usePathname();
-  const { user, signOut } = useAuth();
+  const { user, loggedIn, signOut } = useAuth();
   const [anchorEl, setAnchorEl] = React.useState<null | HTMLElement>(null);
 
   const handleMenu = (event: React.MouseEvent<HTMLElement>) => {
@@ -99,14 +99,14 @@ export default function Navbar() {
         </Box>
 
         {/* User Menu */}
-        {user && (
-          <Box>
+        {loggedIn && user && (
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <Typography variant="body2" color="text.secondary">
+              Cześć, {user.username}
+            </Typography>
             <IconButton onClick={handleMenu} size="small">
-              <Avatar
-                sx={{ width: 36, height: 36, bgcolor: 'primary.main' }}
-                src={user.photoURL || undefined}
-              >
-                {user.displayName?.[0] || user.email?.[0]?.toUpperCase()}
+              <Avatar sx={{ width: 36, height: 36, bgcolor: 'primary.main' }}>
+                {user.username[0]?.toUpperCase()}
               </Avatar>
             </IconButton>
             <Menu
@@ -118,10 +118,7 @@ export default function Navbar() {
             >
               <Box sx={{ px: 2, py: 1 }}>
                 <Typography variant="subtitle2" fontWeight={600}>
-                  {user.displayName || 'Użytkownik'}
-                </Typography>
-                <Typography variant="body2" color="text.secondary">
-                  {user.email}
+                  {user.username}
                 </Typography>
               </Box>
               <Divider />

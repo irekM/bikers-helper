@@ -51,14 +51,9 @@ export default function SettingsPage() {
 
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, maxWidth: 400 }}>
             <TextField
-              label="Email"
-              value={user?.email || ''}
+              label="Nazwa użytkownika"
+              value={user?.username || ''}
               disabled
-              fullWidth
-            />
-            <TextField
-              label="Nazwa wyświetlana"
-              defaultValue={user?.displayName || ''}
               fullWidth
             />
           </Box>
