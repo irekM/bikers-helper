@@ -6,6 +6,7 @@ import Navbar from '@/components/layout/Navbar';
 import { useAuth } from '@/hooks/useAuth';
 import { useRouter } from 'next/navigation';
 import { CircularProgress } from '@mui/material';
+import CategoryBreadcrumbs from '@/components/navigation/CategoryBreadcrumbs';
 
 export default function DashboardLayout({
   children,
@@ -44,6 +45,7 @@ export default function DashboardLayout({
     <Box sx={{ minHeight: '100vh', backgroundColor: 'background.default' }}>
       <Navbar />
       <Container maxWidth="xl" sx={{ py: 4 }}>
+        <CategoryBreadcrumbs />
         {children}
       </Container>
     </Box>

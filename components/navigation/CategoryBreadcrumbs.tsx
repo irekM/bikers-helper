@@ -1,15 +1,16 @@
 'use client';
 
-import React from 'react';
+import { useRouter, usePathname,useSearchParams } from 'next/navigation';
 import {
   Box,
-  Breadcrumbs,
+  Breadcrumbs,  
   Chip,
   Typography,
   Link as MuiLink,
 } from '@mui/material';
 import NavigateNextIcon from '@mui/icons-material/NavigateNext';
 import HomeIcon from '@mui/icons-material/Home';
+//import {Tooltip} from '@mui/material';
 
 // Dummy data - do zastąpienia prawdziwymi danymi
 const MOCK_CATEGORIES = [
@@ -31,15 +32,27 @@ interface CategoryBreadcrumbsProps {
  * CategoryBreadcrumbs - Skeleton komponent nawigacji breadcrumbs
  * 
  * TODO: Dodać logikę:
- * - Obsługa kliknięć i nawigacji
- * - Pobieranie aktualnej ścieżki z routera
+
  * - Dynamiczne generowanie breadcrumbs
  */
+
+
+
 export default function CategoryBreadcrumbs({
   currentCategory = 'helmets',
   productName,
 }: CategoryBreadcrumbsProps) {
-  const category = MOCK_CATEGORIES.find((c) => c.id === currentCategory);
+  const router = useRouter();
+
+  //changed from useRouter to usePathname and useSearchParams to get category from URL
+  //const category = MOCK_CATEGORIES.find((c) => c.id === currentCategory);
+
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const categoryFromURL = searchParams.get('category');
+
+  const activeCategory = categoryFromURL || currentCategory;
+  const category = MOCK_CATEGORIES.find((c) => c.id === activeCategory);
 
   return (
     <Box sx={{ mb: 3 }}>
@@ -59,6 +72,7 @@ export default function CategoryBreadcrumbs({
           label="Dashboard"
           size="small"
           clickable
+          onClick={() => router.push('/dashboard')}
           sx={{
             fontWeight: 500,
             bgcolor: 'transparent',
@@ -68,12 +82,13 @@ export default function CategoryBreadcrumbs({
           }}
         />
 
-        {/* Kategoria */}
+        {/* Category */}
         {category && (
           <Chip
             label={`${category.icon} ${category.name}`}
             size="small"
             clickable
+            onClick={() => router.push(`/dashboard/search?category=${category.id}`)}
             color={productName ? 'default' : 'primary'}
             variant={productName ? 'outlined' : 'filled'}
             sx={{
@@ -82,7 +97,7 @@ export default function CategoryBreadcrumbs({
           />
         )}
 
-        {/* Nazwa produktu (jeśli jest) */}
+        {/* Product Name (if available) */}
         {productName && (
           <Typography
             color="text.primary"
@@ -99,7 +114,7 @@ export default function CategoryBreadcrumbs({
         )}
       </Breadcrumbs>
 
-      {/* Quick category chips - szybka nawigacja */}
+      {/* Quick category chips - fast access navigation */}
       <Box
         sx={{
           display: 'flex',
@@ -114,6 +129,7 @@ export default function CategoryBreadcrumbs({
             label={`${cat.icon} ${cat.name}`}
             size="small"
             clickable
+            onClick={() => router.push(`/dashboard/search?category=${cat.id}`)}
             variant={cat.id === currentCategory ? 'filled' : 'outlined'}
             color={cat.id === currentCategory ? 'primary' : 'default'}
             sx={{
