@@ -32,6 +32,9 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import PriceBadge from '@/components/products/PriceBadge';
 import type { Product, PriceHistoryEntry } from '@/types';
+import ProductDetailCard from '@/components/products/ProductDetailCard';
+import PriceStats from '@/components/products/PriceStats';
+import TwoColumnLayout from '@/components/layout/TwoColumnLayout';
 
 interface ProductWithHistory extends Product {
   priceHistory: PriceHistoryEntry[];
@@ -106,6 +109,8 @@ export default function ProductDetailPage({
     }).format(new Date(date));
   };
 
+ 
+
   if (loading) {
     return (
       <Box>
@@ -128,237 +133,51 @@ export default function ProductDetailPage({
     );
   }
 
+   // Prepare data for price statistics
+  const priceHistory = product.priceHistory;
+
+  const averagePrice = priceHistory.length > 0
+    ? Math.round(priceHistory.reduce((sum, entry) => sum + entry.price, 0) / priceHistory.length)
+    : product.currentPrice;
+
+  const firstPrice = priceHistory.length > 0
+    ? priceHistory[priceHistory.length - 1].price
+    : product.currentPrice;
+
+  const percentChange = firstPrice !== 0
+    ? ((product.currentPrice - firstPrice) / firstPrice) * 100
+    : 0;
+
+  const priceChangesCount = priceHistory.filter((entry, index) => {
+    if (index === priceHistory.length - 1) return false;
+    return entry.price !== priceHistory[index + 1].price;
+  }).length;
+
+  const stats = {
+    lowestPrice: product.lowestPrice,
+    lowestPriceDate: formatDate(product.createdAt),
+    highestPrice: product.highestPrice,
+    highestPriceDate: formatDate(product.createdAt),
+    averagePrice,
+    percentChange,
+    trackedSince: formatDate(product.createdAt),
+    priceChangesCount,
+  };
+
   return (
     <Box>
-      {/* Back Button */}
-      <Button
-        startIcon={<ArrowBackIcon />}
-        onClick={() => router.back()}
-        sx={{ mb: 2 }}
+      <TwoColumnLayout 
+        header={
+          <Button
+            startIcon={<ArrowBackIcon />}
+            onClick={() => router.back()}
+            sx={{ mb: 2 }}
       >
         Wróć
-      </Button>
-
-      <Grid container spacing={4}>
-        {/* Product Info */}
-        <Grid size={{ xs: 12, md: 8 }}>
-          <Card>
-            <CardContent>
-              <Box sx={{ display: 'flex', gap: 3 }}>
-                {/* Image */}
-                {product.imageUrl && (
-                  <Box
-                    component="img"
-                    src={product.imageUrl}
-                    alt={product.name}
-                    sx={{
-                      width: 200,
-                      height: 200,
-                      objectFit: 'contain',
-                      borderRadius: 2,
-                      backgroundColor: 'grey.100',
-                    }}
-                  />
-                )}
-
-                {/* Details */}
-                <Box sx={{ flex: 1 }}>
-                  <Box sx={{ display: 'flex', gap: 1, mb: 2 }}>
-                    <Chip icon={<StoreIcon />} label={product.shopName} />
-                    {!product.available && (
-                      <Chip label="Niedostępny" color="error" />
-                    )}
-                  </Box>
-
-                  <Typography variant="h5" fontWeight={700} gutterBottom>
-                    {product.name}
-                  </Typography>
-
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mt: 2 }}>
-                    <Typography variant="h3" fontWeight={700} color="primary.main">
-                      {formatPrice(product.currentPrice, product.currency)}
-                    </Typography>
-                    <PriceBadge
-                      currentPrice={product.currentPrice}
-                      previousPrice={product.previousPrice}
-                      size="medium"
-                    />
-                  </Box>
-
-                  {product.previousPrice &&
-                    product.previousPrice !== product.currentPrice && (
-                      <Typography
-                        variant="h6"
-                        color="text.secondary"
-                        sx={{ textDecoration: 'line-through' }}
-                      >
-                        {formatPrice(product.previousPrice, product.currency)}
-                      </Typography>
-                    )}
-
-                  <Box sx={{ mt: 3, display: 'flex', gap: 2 }}>
-                    <Button
-                      variant="contained"
-                      startIcon={<OpenInNewIcon />}
-                      component="a"
-                      href={product.url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                    >
-                      Otwórz w sklepie
-                    </Button>
-                    <Button
-                      variant="outlined"
-                      startIcon={<RefreshIcon />}
-                      onClick={handleRefresh}
-                      disabled={refreshing}
-                    >
-                      {refreshing ? 'Odświeżanie...' : 'Odśwież cenę'}
-                    </Button>
-                  </Box>
-                </Box>
-              </Box>
-            </CardContent>
-          </Card>
-
-          {/* Price History Table */}
-          <Paper sx={{ mt: 3 }}>
-            <Box sx={{ p: 2, borderBottom: 1, borderColor: 'divider' }}>
-              <Typography variant="h6" fontWeight={600}>
-                Historia cen
-              </Typography>
-            </Box>
-            <TableContainer>
-              <Table>
-                <TableHead>
-                  <TableRow>
-                    <TableCell>Data</TableCell>
-                    <TableCell align="right">Cena</TableCell>
-                    <TableCell align="center">Dostępność</TableCell>
-                    <TableCell align="center">Zmiana</TableCell>
-                  </TableRow>
-                </TableHead>
-                <TableBody>
-                  {product.priceHistory.map((entry, index) => {
-                    const prevEntry = product.priceHistory[index + 1];
-                    const priceChange = prevEntry
-                      ? entry.price - prevEntry.price
-                      : 0;
-
-                    return (
-                      <TableRow key={entry.id}>
-                        <TableCell>{formatDate(entry.timestamp)}</TableCell>
-                        <TableCell align="right">
-                          <Typography fontWeight={600}>
-                            {formatPrice(entry.price, product.currency)}
-                          </Typography>
-                        </TableCell>
-                        <TableCell align="center">
-                          <Chip
-                            label={entry.available ? 'Dostępny' : 'Niedostępny'}
-                            color={entry.available ? 'success' : 'error'}
-                            size="small"
-                          />
-                        </TableCell>
-                        <TableCell align="center">
-                          {priceChange !== 0 && (
-                            <Box
-                              sx={{
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                                color: priceChange < 0 ? 'success.main' : 'error.main',
-                              }}
-                            >
-                              {priceChange < 0 ? (
-                                <TrendingDownIcon fontSize="small" />
-                              ) : (
-                                <TrendingUpIcon fontSize="small" />
-                              )}
-                              <Typography variant="body2" fontWeight={600}>
-                                {priceChange > 0 ? '+' : ''}
-                                {formatPrice(priceChange, product.currency)}
-                              </Typography>
-                            </Box>
-                          )}
-                        </TableCell>
-                      </TableRow>
-                    );
-                  })}
-                </TableBody>
-              </Table>
-            </TableContainer>
-          </Paper>
-        </Grid>
-
-        {/* Stats Sidebar */}
-        <Grid size={{ xs: 12, md: 4 }}>
-          <Card>
-            <CardContent>
-              <Typography variant="h6" fontWeight={600} gutterBottom>
-                Statystyki
-              </Typography>
-
-              <Box sx={{ mt: 2 }}>
-                <StatItem
-                  label="Najniższa cena"
-                  value={formatPrice(product.lowestPrice, product.currency)}
-                  color="success.main"
-                />
-                <StatItem
-                  label="Najwyższa cena"
-                  value={formatPrice(product.highestPrice, product.currency)}
-                  color="error.main"
-                />
-                <StatItem
-                  label="Aktualna cena"
-                  value={formatPrice(product.currentPrice, product.currency)}
-                  color="primary.main"
-                />
-                <StatItem
-                  label="Dodano"
-                  value={formatDate(product.createdAt)}
-                />
-                <StatItem
-                  label="Ostatnia aktualizacja"
-                  value={formatDate(product.lastChecked)}
-                />
-              </Box>
-            </CardContent>
-          </Card>
-        </Grid>
-      </Grid>
-    </Box>
+          </Button>} 
+        leftColumn={<ProductDetailCard product={product} />} 
+        rightColumn={<PriceStats stats={stats} currency={product.currency} />}/>
+      </Box>
   );
 }
 
-function StatItem({
-  label,
-  value,
-  color,
-}: {
-  label: string;
-  value: string;
-  color?: string;
-}) {
-  return (
-    <Box
-      sx={{
-        display: 'flex',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        py: 1.5,
-        borderBottom: 1,
-        borderColor: 'divider',
-        '&:last-child': { borderBottom: 0 },
-      }}
-    >
-      <Typography variant="body2" color="text.secondary">
-        {label}
-      </Typography>
-      <Typography variant="body1" fontWeight={600} sx={{ color }}>
-        {value}
-      </Typography>
-    </Box>
-  );
-}

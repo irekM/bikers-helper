@@ -20,42 +20,16 @@ import OpenInNewIcon from '@mui/icons-material/OpenInNew';
 import AccessTimeIcon from '@mui/icons-material/AccessTime';
 import StorefrontIcon from '@mui/icons-material/Storefront';
 
+//import types
+import type { Product } from '@/types';
+
 interface ProductDetailCardProps {
-  product?: {
-    id: string;
-    name: string;
-    imageUrl: string;
-    currentPrice: number;
-    previousPrice: number | null;
-    currency: string;
-    shopName: string;
-    shopLogo?: string;
-    url: string;
-    available: boolean;
-    lastChecked: string;
-    category?: string;
-  };
+  product?: Product;
   isFavorite?: boolean;
   onAddAlert?: () => void;
   onToggleFavorite?: () => void;
   isLoading?: boolean;
 }
-
-// Domyślne dane produktu - do zastąpienia prawdziwymi
-const DEFAULT_PRODUCT = {
-  id: 'mock-1',
-  name: 'AGV K3 SV Rossi Winter Test 2019',
-  imageUrl: 'https://via.placeholder.com/400x300?text=Kask+AGV',
-  currentPrice: 489,
-  previousPrice: 549,
-  currency: 'PLN',
-  shopName: 'MotoZone',
-  shopLogo: undefined,
-  url: 'https://example.com/product',
-  available: true,
-  lastChecked: '5 min temu',
-  category: 'Kaski',
-};
 
 /**
  * ProductDetailCard - Skeleton komponent szczegółowej karty produktu
@@ -67,7 +41,7 @@ const DEFAULT_PRODUCT = {
  * - Pobieranie danych produktu z hooka
  */
 export default function ProductDetailCard({
-  product = DEFAULT_PRODUCT,
+  product,
   isFavorite = false,
   onAddAlert,
   onToggleFavorite,
@@ -82,15 +56,10 @@ export default function ProductDetailCard({
     // onToggleFavorite?.();
   };
 
-  // Oblicz zmianę ceny
-  const priceChange = product.previousPrice
-    ? product.currentPrice - product.previousPrice
-    : null;
-  const priceChangePercent = product.previousPrice
-    ? ((priceChange! / product.previousPrice) * 100).toFixed(1)
-    : null;
+  
+//Early return for loading state or missing product
 
-  if (isLoading) {
+  if (isLoading || !product) {
     return (
       <Card
         elevation={0}
@@ -113,6 +82,14 @@ export default function ProductDetailCard({
       </Card>
     );
   }
+
+// Calculating price change and percentage
+  const priceChange = product.previousPrice
+    ? product.currentPrice - product.previousPrice
+    : null;
+  const priceChangePercent = product.previousPrice
+    ? ((priceChange! / product.previousPrice) * 100).toFixed(1)
+    : null;
 
   return (
     <Card
@@ -262,7 +239,13 @@ export default function ProductDetailCard({
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 3 }}>
           <AccessTimeIcon fontSize="small" color="action" />
           <Typography variant="caption" color="text.secondary">
-            Aktualizacja: {product.lastChecked}
+            Aktualizacja: {new Intl.DateTimeFormat('pl-PL', {
+              day: '2-digit',
+              month: '2-digit',
+              year: 'numeric',
+              hour: '2-digit',
+              minute: '2-digit',
+            }).format(new Date(product.lastChecked))}
           </Typography>
         </Box>
 
@@ -273,6 +256,10 @@ export default function ProductDetailCard({
             size="large"
             endIcon={<OpenInNewIcon />}
             fullWidth
+            component="a"
+            href={product.url}
+            target="_blank"
+            rel="noopener noreferrer"
             sx={{
               textTransform: 'none',
               fontWeight: 600,
