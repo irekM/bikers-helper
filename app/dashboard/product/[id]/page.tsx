@@ -1,6 +1,6 @@
 'use client';
 
-import React, { use } from 'react';
+import { use, useState, useEffect } from 'react';
 import {
   Box,
   Typography,
@@ -40,6 +40,19 @@ interface ProductWithHistory extends Product {
   priceHistory: PriceHistoryEntry[];
 }
 
+const PRODUCT_STATE = {
+  INIT: 'init',
+  LOADING: 'loading',
+  ERROR: 'error',
+  SUCCESS: 'success',
+} as const;
+
+type ProductState = 
+| { type: typeof PRODUCT_STATE.INIT }
+| { type: typeof PRODUCT_STATE.LOADING }
+| { type: typeof PRODUCT_STATE.ERROR; error: string }
+| { type: typeof PRODUCT_STATE.SUCCESS; product: ProductWithHistory };
+
 export default function ProductDetailPage({
   params,
 }: {
@@ -47,32 +60,39 @@ export default function ProductDetailPage({
 }) {
   const { id } = use(params);
   const router = useRouter();
-  const [product, setProduct] = React.useState<ProductWithHistory | null>(null);
-  const [loading, setLoading] = React.useState(true);
-  const [error, setError] = React.useState<string | null>(null);
-  const [refreshing, setRefreshing] = React.useState(false);
+  const [state, setState] = useState<ProductState>({ type: PRODUCT_STATE.INIT });
+  const [refreshing, setRefreshing] = useState(false);
 
-  const fetchProduct = React.useCallback(async () => {
+  const loadProduct = async () => {
     try {
-      setLoading(true);
+      setState({ type: PRODUCT_STATE.LOADING });
+
       const response = await fetch(`/api/products/${id}`);
       const data = await response.json();
 
       if (data.success) {
-        setProduct(data.data);
-      } else {
-        setError(data.error.message);
+        setState({
+          type: PRODUCT_STATE.SUCCESS,
+          product: data.data,
+        });
+        return;
       }
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to fetch product');
-    } finally {
-      setLoading(false);
-    }
-  }, [id]);
 
-  React.useEffect(() => {
-    fetchProduct();
-  }, [fetchProduct]);
+      setState({
+        type: PRODUCT_STATE.ERROR,
+        error: data.error?.message ?? 'Nie można załadować produktu',
+      });
+    } catch (err) {
+      setState({
+        type: PRODUCT_STATE.ERROR,
+        error: err instanceof Error ? err.message : 'Nie można załadować produktu',
+      });
+    }
+  };
+
+  useEffect(() => {
+    void loadProduct();
+  }, [id]);
 
   const handleRefresh = async () => {
     try {
@@ -83,7 +103,7 @@ export default function ProductDetailPage({
       const data = await response.json();
 
       if (data.success) {
-        await fetchProduct();
+        await loadProduct();
       }
     } catch (err) {
       console.error('Refresh error:', err);
@@ -111,7 +131,7 @@ export default function ProductDetailPage({
 
  
 
-  if (loading) {
+  if (state.type === PRODUCT_STATE.LOADING || state.type === PRODUCT_STATE.INIT) {
     return (
       <Box>
         <Skeleton variant="text" width={300} height={40} />
@@ -120,28 +140,31 @@ export default function ProductDetailPage({
     );
   }
 
-  if (error || !product) {
+  if (state.type === PRODUCT_STATE.ERROR) {
     return (
       <Box>
         <Button startIcon={<ArrowBackIcon />} onClick={() => router.back()}>
           Wróć
         </Button>
         <Alert severity="error" sx={{ mt: 2 }}>
-          {error || 'Nie znaleziono produktu'}
+          {state.error}
         </Alert>
       </Box>
     );
   }
 
    // Prepare data for price statistics
+   const product = state.product;
   const priceHistory = product.priceHistory;
 
   const averagePrice = priceHistory.length > 0
     ? Math.round(priceHistory.reduce((sum, entry) => sum + entry.price, 0) / priceHistory.length)
     : product.currentPrice;
 
-  const firstPrice = priceHistory.length > 0
-    ? priceHistory[priceHistory.length - 1].price
+    //reverse array because priceHistory is sorted desc — reverse to get the oldest (first) price at index 0
+   const sortedAsc = [...priceHistory].reverse();
+  const firstPrice = sortedAsc.length > 0
+    ? sortedAsc[0].price
     : product.currentPrice;
 
   const percentChange = firstPrice !== 0
@@ -149,7 +172,9 @@ export default function ProductDetailPage({
     : 0;
 
   const priceChangesCount = priceHistory.filter((entry, index) => {
-    if (index === priceHistory.length - 1) return false;
+    if (index === priceHistory.length - 1){
+      return false;
+    }
     return entry.price !== priceHistory[index + 1].price;
   }).length;
 
