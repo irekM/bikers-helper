@@ -22,6 +22,7 @@ import {
 import Link from 'next/link';
 import PriceBadge from './PriceBadge';
 import type { Product } from '@/types';
+import { formatPrice, formatDate } from '@/lib/priceCalculation';
 
 interface ProductCardProps {
   product: Product;
@@ -49,22 +50,7 @@ export default function ProductCard({
     }
   };
 
-  const formatPrice = (price: number, currency: string) => {
-    return new Intl.NumberFormat('pl-PL', {
-      style: 'currency',
-      currency: currency,
-    }).format(price);
-  };
 
-  const formatDate = (date: Date) => {
-    return new Intl.DateTimeFormat('pl-PL', {
-      day: '2-digit',
-      month: '2-digit',
-      year: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
-    }).format(new Date(date));
-  };
 
   if (loading) {
     return (

@@ -35,6 +35,7 @@ import type { Product, PriceHistoryEntry } from '@/types';
 import ProductDetailCard from '@/components/products/ProductDetailCard';
 import PriceStats from '@/components/products/PriceStats';
 import TwoColumnLayout from '@/components/layout/TwoColumnLayout';
+import { formatDate, calculateAveragePrice, calculatePercentChangeFromHistory, countPriceChanges } from '@/lib/priceCalculation';
 
 interface ProductWithHistory extends Product {
   priceHistory: PriceHistoryEntry[];
@@ -112,22 +113,7 @@ export default function ProductDetailPage({
     }
   };
 
-  const formatPrice = (price: number, currency: string) => {
-    return new Intl.NumberFormat('pl-PL', {
-      style: 'currency',
-      currency: currency,
-    }).format(price);
-  };
 
-  const formatDate = (date: Date) => {
-    return new Intl.DateTimeFormat('pl-PL', {
-      day: '2-digit',
-      month: '2-digit',
-      year: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
-    }).format(new Date(date));
-  };
 
  
 
@@ -157,26 +143,9 @@ export default function ProductDetailPage({
    const product = state.product;
   const priceHistory = product.priceHistory;
 
-  const averagePrice = priceHistory.length > 0
-    ? Math.round(priceHistory.reduce((sum, entry) => sum + entry.price, 0) / priceHistory.length)
-    : product.currentPrice;
-
-    //reverse array because priceHistory is sorted desc — reverse to get the oldest (first) price at index 0
-   const sortedAsc = [...priceHistory].reverse();
-  const firstPrice = sortedAsc.length > 0
-    ? sortedAsc[0].price
-    : product.currentPrice;
-
-  const percentChange = firstPrice !== 0
-    ? ((product.currentPrice - firstPrice) / firstPrice) * 100
-    : 0;
-
-  const priceChangesCount = priceHistory.filter((entry, index) => {
-    if (index === priceHistory.length - 1){
-      return false;
-    }
-    return entry.price !== priceHistory[index + 1].price;
-  }).length;
+  const averagePrice = calculateAveragePrice(priceHistory, product.currentPrice);
+  const percentChange = calculatePercentChangeFromHistory(product.currentPrice, priceHistory);
+  const priceChangesCount = countPriceChanges(priceHistory);
 
   const stats = {
     lowestPrice: product.lowestPrice,
