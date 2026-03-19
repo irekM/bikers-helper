@@ -1,14 +1,15 @@
 import type { PriceHistoryEntry } from '@/types';
 
-export function calculatePriceChange(currentPrice: number, previousPrice: number): number {
+export function calculatePriceChange(currentPrice: number, previousPrice: number | null | undefined): number | null {
+  if (previousPrice == null) return null;
   return currentPrice - previousPrice;
 }
 
-export function calculatePriceChangePercent(currentPrice: number, previousPrice: number): number {
-  if (previousPrice === 0) {
-    return 0;
+export function calculatePriceChangePercent(currentPrice: number, previousPrice: number | null | undefined, decimals: number = 1): string | null {
+  if (previousPrice == null || previousPrice === 0) {
+    return null;
   }
-  return ((currentPrice - previousPrice) / previousPrice) * 100;
+  return (((currentPrice - previousPrice) / previousPrice) * 100).toFixed(decimals);
 }
 
 export function formatPrice(price: number, currency: string): string {
@@ -41,8 +42,7 @@ export function calculateAveragePrice(priceHistory: PriceHistoryEntry[], fallbac
 }
 
 export function calculatePercentChangeFromHistory(currentPrice: number, priceHistory: PriceHistoryEntry[]): number {
-  const sortedAsc = [...priceHistory].reverse();
-  const firstPrice = sortedAsc.length > 0 ? sortedAsc[0].price : currentPrice;
+  const firstPrice = priceHistory.at(-1)?.price ?? currentPrice;
   if (firstPrice === 0){
     return 0;
   }
@@ -50,10 +50,14 @@ export function calculatePercentChangeFromHistory(currentPrice: number, priceHis
 }
 
 export function countPriceChanges(priceHistory: PriceHistoryEntry[]): number {
-  return priceHistory.filter((entry, index) => {
-    if (index === priceHistory.length - 1){
-        return false;
-    }
-    return entry.price !== priceHistory[index + 1].price;
-  }).length;
+  let changes = 0;
+
+  for (let i = 1; i < priceHistory.length; i++) {
+    const current = priceHistory[i].price;
+    const previous = priceHistory[i - 1].price;
+
+    if (current !== previous) changes++;
+  }
+
+  return changes;
 }

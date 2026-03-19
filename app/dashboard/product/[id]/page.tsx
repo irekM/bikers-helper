@@ -41,7 +41,7 @@ interface ProductWithHistory extends Product {
   priceHistory: PriceHistoryEntry[];
 }
 
-const PRODUCT_STATE = {
+const productState = {
   INIT: 'init',
   LOADING: 'loading',
   ERROR: 'error',
@@ -49,10 +49,10 @@ const PRODUCT_STATE = {
 } as const;
 
 type ProductState = 
-| { type: typeof PRODUCT_STATE.INIT }
-| { type: typeof PRODUCT_STATE.LOADING }
-| { type: typeof PRODUCT_STATE.ERROR; error: string }
-| { type: typeof PRODUCT_STATE.SUCCESS; product: ProductWithHistory };
+| { type: typeof productState.INIT }
+| { type: typeof productState.LOADING }
+| { type: typeof productState.ERROR; error: string }
+| { type: typeof productState.SUCCESS; product: ProductWithHistory };
 
 export default function ProductDetailPage({
   params,
@@ -61,31 +61,31 @@ export default function ProductDetailPage({
 }) {
   const { id } = use(params);
   const router = useRouter();
-  const [state, setState] = useState<ProductState>({ type: PRODUCT_STATE.INIT });
+  const [state, setState] = useState<ProductState>({ type: productState.INIT });
   const [refreshing, setRefreshing] = useState(false);
 
   const loadProduct = async () => {
     try {
-      setState({ type: PRODUCT_STATE.LOADING });
+      setState({ type: productState.LOADING });
 
       const response = await fetch(`/api/products/${id}`);
       const data = await response.json();
 
       if (data.success) {
         setState({
-          type: PRODUCT_STATE.SUCCESS,
+          type: productState.SUCCESS,
           product: data.data,
         });
         return;
       }
 
       setState({
-        type: PRODUCT_STATE.ERROR,
+        type: productState.ERROR,
         error: data.error?.message ?? 'Nie można załadować produktu',
       });
     } catch (err) {
       setState({
-        type: PRODUCT_STATE.ERROR,
+        type: productState.ERROR,
         error: err instanceof Error ? err.message : 'Nie można załadować produktu',
       });
     }
@@ -117,7 +117,7 @@ export default function ProductDetailPage({
 
  
 
-  if (state.type === PRODUCT_STATE.LOADING || state.type === PRODUCT_STATE.INIT) {
+  if (state.type === productState.LOADING || state.type === productState.INIT) {
     return (
       <Box>
         <Skeleton variant="text" width={300} height={40} />
@@ -126,7 +126,7 @@ export default function ProductDetailPage({
     );
   }
 
-  if (state.type === PRODUCT_STATE.ERROR) {
+  if (state.type === productState.ERROR) {
     return (
       <Box>
         <Button startIcon={<ArrowBackIcon />} onClick={() => router.back()}>
@@ -140,21 +140,21 @@ export default function ProductDetailPage({
   }
 
    // Prepare data for price statistics
-   const product = state.product;
-  const priceHistory = product.priceHistory;
+   const { product } = state;
+  const { priceHistory, currentPrice, lowestPrice, highestPrice, createdAt, currency } = product;
 
-  const averagePrice = calculateAveragePrice(priceHistory, product.currentPrice);
-  const percentChange = calculatePercentChangeFromHistory(product.currentPrice, priceHistory);
+  const averagePrice = calculateAveragePrice(priceHistory, currentPrice);
+  const percentChange = calculatePercentChangeFromHistory(currentPrice, priceHistory);
   const priceChangesCount = countPriceChanges(priceHistory);
 
   const stats = {
-    lowestPrice: product.lowestPrice,
-    lowestPriceDate: formatDate(product.createdAt),
-    highestPrice: product.highestPrice,
-    highestPriceDate: formatDate(product.createdAt),
+    lowestPrice,
+    lowestPriceDate: formatDate(createdAt),
+    highestPrice,
+    highestPriceDate: formatDate(createdAt),
     averagePrice,
     percentChange,
-    trackedSince: formatDate(product.createdAt),
+    trackedSince: formatDate(createdAt),
     priceChangesCount,
   };
 
@@ -170,7 +170,7 @@ export default function ProductDetailPage({
         Wróć
           </Button>} 
         leftColumn={<ProductDetailCard product={product} />} 
-        rightColumn={<PriceStats stats={stats} currency={product.currency} />}/>
+        rightColumn={<PriceStats stats={stats} currency={currency} />}/>
       </Box>
   );
 }
