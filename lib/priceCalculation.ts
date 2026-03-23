@@ -1,13 +1,12 @@
 import type { PriceHistoryEntry } from '@/types';
 
-export function calculatePriceChange(currentPrice: number, previousPrice: number | null | undefined): number | null {
-  if (previousPrice == null) return null;
+export function calculatePriceChange(currentPrice: number, previousPrice: number): number {
   return currentPrice - previousPrice;
 }
 
-export function calculatePriceChangePercent(currentPrice: number, previousPrice: number | null | undefined, decimals: number = 1): string | null {
-  if (previousPrice == null || previousPrice === 0) {
-    return null;
+export function calculatePriceChangePercent(currentPrice: number, previousPrice: number, decimals: number = 1): string {
+  if (previousPrice === 0) {
+    return '0';
   }
   return (((currentPrice - previousPrice) / previousPrice) * 100).toFixed(decimals);
 }

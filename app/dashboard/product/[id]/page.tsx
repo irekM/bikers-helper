@@ -37,6 +37,8 @@ import PriceStats from '@/components/products/PriceStats';
 import TwoColumnLayout from '@/components/layout/TwoColumnLayout';
 import { formatDate, calculateAveragePrice, calculatePercentChangeFromHistory, countPriceChanges } from '@/lib/priceCalculation';
 
+const errorMessage = 'Nie można załadować produktu';
+
 interface ProductWithHistory extends Product {
   priceHistory: PriceHistoryEntry[];
 }
@@ -81,12 +83,12 @@ export default function ProductDetailPage({
 
       setState({
         type: productState.ERROR,
-        error: data.error?.message ?? 'Nie można załadować produktu',
+        error: errorMessage,
       });
     } catch (err) {
       setState({
         type: productState.ERROR,
-        error: err instanceof Error ? err.message : 'Nie można załadować produktu',
+        error: errorMessage,
       });
     }
   };

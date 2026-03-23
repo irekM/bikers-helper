@@ -87,8 +87,8 @@ export default function ProductDetailCard({
   const { name, currentPrice, previousPrice, currency, imageUrl, category, available, shopName, lastChecked, url } = product;
 
 // Calculating price change and percentage
-  const priceChange = calculatePriceChange(currentPrice, previousPrice);
-  const priceChangePercent = calculatePriceChangePercent(currentPrice, previousPrice);
+  const priceChange = previousPrice != null ? calculatePriceChange(currentPrice, previousPrice) : null;
+  const priceChangePercent = previousPrice != null ? calculatePriceChangePercent(currentPrice, previousPrice) : null;
 
   return (
     <Card

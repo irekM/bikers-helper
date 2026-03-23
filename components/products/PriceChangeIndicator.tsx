@@ -68,7 +68,7 @@ export default function PriceChangeIndicator({
 
   const change = calculatePriceChange(currentPrice, previousPrice);
   const changePercent = calculatePriceChangePercent(currentPrice, previousPrice);
-  const isDecrease = change! < 0;
+  const isDecrease = change < 0;
 
   // Kolory z dokumentacji
   const bgColor = isDecrease ? 'success.light' : 'error.light';
@@ -84,7 +84,7 @@ export default function PriceChangeIndicator({
   };
 
   const formatPercent = () => {
-    const prefix = change! > 0 ? '+' : '';
+    const prefix = change > 0 ? '+' : '';
     return `${prefix}${changePercent}%`;
   };
   // Tekst do wyświetlenia
