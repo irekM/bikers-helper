@@ -9,6 +9,7 @@ import {
   Typography,
   Skeleton,
 } from '@mui/material';
+import { formatPercentChange } from '@/lib/priceCalculation';
 import TrendingUpIcon from '@mui/icons-material/TrendingUp';
 import TrendingDownIcon from '@mui/icons-material/TrendingDown';
 import BarChartIcon from '@mui/icons-material/BarChart';
@@ -151,11 +152,6 @@ export default function PriceStats({
       </Card>
     );
   }
-
-  const formatPercentChange = (value: number) => {
-    const prefix = value > 0 ? '+' : '';
-    return `${prefix}${value.toFixed(1)}%`;
-  };
 
   return (
     <Card

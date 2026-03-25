@@ -2,6 +2,7 @@
 
 import React from 'react';
 import { Box, Typography } from '@mui/material';
+import { calculatePriceChange, calculatePriceChangePercent } from '@/lib/priceCalculation';
 import TrendingUpIcon from '@mui/icons-material/TrendingUp';
 import TrendingDownIcon from '@mui/icons-material/TrendingDown';
 import RemoveIcon from '@mui/icons-material/Remove';
@@ -65,8 +66,8 @@ export default function PriceChangeIndicator({
     );
   }
 
-  const change = currentPrice - previousPrice;
-  const changePercent = (change / previousPrice) * 100;
+  const change = calculatePriceChange(currentPrice, previousPrice);
+  const changePercent = calculatePriceChangePercent(currentPrice, previousPrice);
   const isDecrease = change < 0;
 
   // Kolory z dokumentacji
@@ -84,9 +85,8 @@ export default function PriceChangeIndicator({
 
   const formatPercent = () => {
     const prefix = change > 0 ? '+' : '';
-    return `${prefix}${changePercent.toFixed(1)}%`;
+    return `${prefix}${changePercent}%`;
   };
-
   // Tekst do wyświetlenia
   const getText = () => {
     const parts: string[] = [];

@@ -1,18 +1,19 @@
 'use client';
 
 import React from 'react';
+import { calculatePriceChange, calculatePriceChangePercent, formatDate } from '@/lib/priceCalculation';
 import {
   Box,
   Card,
   CardContent,
   CardMedia,
   Typography,
-  Button,
   IconButton,
   Chip,
   Skeleton,
   Divider,
 } from '@mui/material';
+import ActionButton from '@/components/products/ActionButton';
 import FavoriteIcon from '@mui/icons-material/Favorite';
 import FavoriteBorderIcon from '@mui/icons-material/FavoriteBorder';
 import NotificationsActiveIcon from '@mui/icons-material/NotificationsActive';
@@ -20,42 +21,16 @@ import OpenInNewIcon from '@mui/icons-material/OpenInNew';
 import AccessTimeIcon from '@mui/icons-material/AccessTime';
 import StorefrontIcon from '@mui/icons-material/Storefront';
 
+//import types
+import type { Product } from '@/types';
+
 interface ProductDetailCardProps {
-  product?: {
-    id: string;
-    name: string;
-    imageUrl: string;
-    currentPrice: number;
-    previousPrice: number | null;
-    currency: string;
-    shopName: string;
-    shopLogo?: string;
-    url: string;
-    available: boolean;
-    lastChecked: string;
-    category?: string;
-  };
+  product?: Product;
   isFavorite?: boolean;
   onAddAlert?: () => void;
   onToggleFavorite?: () => void;
   isLoading?: boolean;
 }
-
-// Domyślne dane produktu - do zastąpienia prawdziwymi
-const DEFAULT_PRODUCT = {
-  id: 'mock-1',
-  name: 'AGV K3 SV Rossi Winter Test 2019',
-  imageUrl: 'https://via.placeholder.com/400x300?text=Kask+AGV',
-  currentPrice: 489,
-  previousPrice: 549,
-  currency: 'PLN',
-  shopName: 'MotoZone',
-  shopLogo: undefined,
-  url: 'https://example.com/product',
-  available: true,
-  lastChecked: '5 min temu',
-  category: 'Kaski',
-};
 
 /**
  * ProductDetailCard - Skeleton komponent szczegółowej karty produktu
@@ -67,7 +42,7 @@ const DEFAULT_PRODUCT = {
  * - Pobieranie danych produktu z hooka
  */
 export default function ProductDetailCard({
-  product = DEFAULT_PRODUCT,
+  product,
   isFavorite = false,
   onAddAlert,
   onToggleFavorite,
@@ -82,15 +57,10 @@ export default function ProductDetailCard({
     // onToggleFavorite?.();
   };
 
-  // Oblicz zmianę ceny
-  const priceChange = product.previousPrice
-    ? product.currentPrice - product.previousPrice
-    : null;
-  const priceChangePercent = product.previousPrice
-    ? ((priceChange! / product.previousPrice) * 100).toFixed(1)
-    : null;
+  
+//Early return for loading state or missing product
 
-  if (isLoading) {
+  if (isLoading || !product) {
     return (
       <Card
         elevation={0}
@@ -114,6 +84,12 @@ export default function ProductDetailCard({
     );
   }
 
+  const { name, currentPrice, previousPrice, currency, imageUrl, category, available, shopName, lastChecked, url } = product;
+
+// Calculating price change and percentage
+  const priceChange = previousPrice != null ? calculatePriceChange(currentPrice, previousPrice) : null;
+  const priceChangePercent = previousPrice != null ? calculatePriceChangePercent(currentPrice, previousPrice) : null;
+
   return (
     <Card
       elevation={0}
@@ -133,8 +109,8 @@ export default function ProductDetailCard({
         <CardMedia
           component="img"
           height="250"
-          image={product.imageUrl}
-          alt={product.name}
+          image={imageUrl}
+          alt={name}
           sx={{
             objectFit: 'cover',
             bgcolor: 'grey.100',
@@ -142,9 +118,9 @@ export default function ProductDetailCard({
         />
 
         {/* Badge kategorii */}
-        {product.category && (
+        {category && (
           <Chip
-            label={product.category}
+            label={category}
             size="small"
             sx={{
               position: 'absolute',
@@ -181,9 +157,9 @@ export default function ProductDetailCard({
 
         {/* Badge dostępności */}
         <Chip
-          label={product.available ? 'Dostępny' : 'Niedostępny'}
+          label={available ? 'Dostępny' : 'Niedostępny'}
           size="small"
-          color={product.available ? 'success' : 'warning'}
+          color={available ? 'success' : 'warning'}
           sx={{
             position: 'absolute',
             bottom: 12,
@@ -208,7 +184,7 @@ export default function ProductDetailCard({
             lineHeight: 1.3,
           }}
         >
-          {product.name}
+          {name}
         </Typography>
 
         {/* Cena */}
@@ -218,17 +194,17 @@ export default function ProductDetailCard({
             fontWeight={800}
             color="primary.main"
           >
-            {product.currentPrice}
+            {currentPrice}
           </Typography>
           <Typography variant="h6" color="text.secondary">
-            {product.currency}
+            {currency}
           </Typography>
         </Box>
 
         {/* Zmiana ceny */}
         {priceChange !== null && (
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
-            {product.previousPrice && (
+            {previousPrice && (
               <Typography
                 variant="body2"
                 sx={{
@@ -236,11 +212,11 @@ export default function ProductDetailCard({
                   color: 'text.disabled',
                 }}
               >
-                {product.previousPrice} {product.currency}
+                {previousPrice} {currency}
               </Typography>
             )}
             <Chip
-              label={`${priceChange > 0 ? '+' : ''}${priceChange} ${product.currency} (${priceChange > 0 ? '+' : ''}${priceChangePercent}%)`}
+              label={`${priceChange > 0 ? '+' : ''}${priceChange} ${currency} (${priceChange > 0 ? '+' : ''}${priceChangePercent}%)`}
               size="small"
               color={priceChange < 0 ? 'success' : 'error'}
               sx={{ fontWeight: 600 }}
@@ -254,7 +230,7 @@ export default function ProductDetailCard({
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
           <StorefrontIcon fontSize="small" color="action" />
           <Typography variant="body2" fontWeight={500}>
-            {product.shopName}
+            {shopName}
           </Typography>
         </Box>
 
@@ -262,42 +238,30 @@ export default function ProductDetailCard({
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 3 }}>
           <AccessTimeIcon fontSize="small" color="action" />
           <Typography variant="caption" color="text.secondary">
-            Aktualizacja: {product.lastChecked}
+            Aktualizacja: {formatDate(lastChecked)}
           </Typography>
         </Box>
 
         {/* Akcje */}
         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
-          <Button
+          <ActionButton
             variant="contained"
-            size="large"
             endIcon={<OpenInNewIcon />}
-            fullWidth
-            sx={{
-              textTransform: 'none',
-              fontWeight: 600,
-              py: 1.5,
-              borderRadius: 2,
-            }}
+            component="a"
+            href={url}
+            target="_blank"
+            rel="noopener noreferrer"
           >
             Przejdź do sklepu
-          </Button>
+          </ActionButton>
 
-          <Button
+          <ActionButton
             variant="outlined"
-            size="large"
             startIcon={<NotificationsActiveIcon />}
-            fullWidth
             onClick={onAddAlert}
-            sx={{
-              textTransform: 'none',
-              fontWeight: 600,
-              py: 1.5,
-              borderRadius: 2,
-            }}
           >
             Ustaw alert cenowy
-          </Button>
+          </ActionButton>
         </Box>
       </CardContent>
     </Card>
