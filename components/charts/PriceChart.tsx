@@ -3,9 +3,19 @@
 import React from 'react';
 import { Box, Paper, Typography, useTheme, Skeleton } from '@mui/material';
 import ShowChartIcon from '@mui/icons-material/ShowChart';
+import { sectionCardPaddedSx, sectionHeaderSx, iconRowSx } from '@/theme/commonStyles';
+import {
+  ResponsiveContainer,
+  AreaChart,
+  Area,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ReferenceLine,
+} from 'recharts';
 
-// Dummy data dla wykresu - wizualna reprezentacja
-const MOCK_CHART_DATA = [
+const mockChartData = [
   { date: '01.01', price: 499 },
   { date: '08.01', price: 520 },
   { date: '15.01', price: 485 },
@@ -22,51 +32,50 @@ interface PriceChartProps {
   height?: number;
 }
 
-/**
- * PriceChart - Skeleton komponent wykresu cenowego
- * 
- * TODO: Dodać logikę:
- * - Instalacja i integracja Recharts: npm install recharts
- * - Pobieranie danych historycznych z Firestore
- * - Tooltip z detalami (data, cena, dostępność)
- * - Linie referencyjne min/max
- * - Responsywność (ResponsiveContainer)
- * - Formatowanie dat według wybranego zakresu
- */
+interface CustomTooltipProps {
+  active?: boolean;
+  payload?: { value: number }[];
+  label?: string;
+  currency: string;
+}
+
+function CustomTooltip({ active, payload, label, currency }: CustomTooltipProps) {
+  if (!active || !payload?.length) return null;
+
+  return (
+    <Paper elevation={3} sx={{ p: 1.5, border: '1px solid', borderColor: 'divider' }}>
+      <Typography variant="caption" color="text.secondary">
+        {label}
+      </Typography>
+      <Typography variant="body2" fontWeight={600}>
+        {payload[0].value} {currency}
+      </Typography>
+    </Paper>
+  );
+}
+
 export default function PriceChart({
-  data = MOCK_CHART_DATA,
+  data = mockChartData,
   currency = 'PLN',
   isLoading = false,
   height = 300,
 }: PriceChartProps) {
   const theme = useTheme();
 
-  // Oblicz min/max z danych (placeholder)
   const prices = data.map((d) => d.price);
   const minPrice = Math.min(...prices);
   const maxPrice = Math.max(...prices);
 
-  // Kolory zgodne z dokumentacją
-  const CHART_COLORS = {
-    line: theme.palette.primary.main, // #1976d2
-    area: `${theme.palette.primary.main}1A`, // 10% opacity
-    min: theme.palette.success.main, // #4caf50
-    max: theme.palette.error.main, // #f44336
+  const chartColors = {
+    line: theme.palette.primary.main,
+    min: theme.palette.success.main,
+    max: theme.palette.error.main,
     grid: theme.palette.divider,
   };
 
   if (isLoading) {
     return (
-      <Paper
-        elevation={0}
-        sx={{
-          p: 3,
-          borderRadius: 3,
-          bgcolor: 'background.paper',
-          border: '1px solid',
-          borderColor: 'divider',
-        }}
-      >
+      <Paper elevation={0} sx={sectionCardPaddedSx}>
         <Skeleton variant="text" width={200} height={32} sx={{ mb: 2 }} />
         <Skeleton variant="rectangular" height={height} sx={{ borderRadius: 2 }} />
       </Paper>
@@ -74,26 +83,10 @@ export default function PriceChart({
   }
 
   return (
-    <Paper
-      elevation={0}
-      sx={{
-        p: 3,
-        borderRadius: 3,
-        bgcolor: 'background.paper',
-        border: '1px solid',
-        borderColor: 'divider',
-      }}
-    >
+    <Paper elevation={0} sx={sectionCardPaddedSx}>
       {/* Header */}
-      <Box
-        sx={{
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          mb: 3,
-        }}
-      >
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+      <Box sx={sectionHeaderSx}>
+        <Box sx={iconRowSx}>
           <ShowChartIcon color="primary" />
           <Typography variant="h6" fontWeight={600}>
             Historia cen
@@ -107,7 +100,7 @@ export default function PriceChart({
               sx={{
                 width: 12,
                 height: 3,
-                bgcolor: CHART_COLORS.min,
+                bgcolor: chartColors.min,
                 borderRadius: 1,
               }}
             />
@@ -120,7 +113,7 @@ export default function PriceChart({
               sx={{
                 width: 12,
                 height: 3,
-                bgcolor: CHART_COLORS.max,
+                bgcolor: chartColors.max,
                 borderRadius: 1,
               }}
             />
@@ -131,146 +124,59 @@ export default function PriceChart({
         </Box>
       </Box>
 
-      {/* Placeholder dla wykresu Recharts */}
-      <Box
-        sx={{
-          width: '100%',
-          height: height,
-          bgcolor: 'action.hover',
-          borderRadius: 2,
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-          justifyContent: 'center',
-          border: '2px dashed',
-          borderColor: 'divider',
-          position: 'relative',
-          overflow: 'hidden',
-        }}
-      >
-        {/* Symulacja siatki wykresu */}
-        <Box
-          sx={{
-            position: 'absolute',
-            inset: 0,
-            display: 'flex',
-            flexDirection: 'column',
-            justifyContent: 'space-between',
-            p: 3,
-            opacity: 0.3,
-          }}
-        >
-          {[...Array(5)].map((_, i) => (
-            <Box
-              key={i}
-              sx={{
-                width: '100%',
-                height: 1,
-                bgcolor: 'divider',
-              }}
-            />
-          ))}
-        </Box>
+      {/* chart of Recharts */}
+      <ResponsiveContainer width="100%" height={height}>
+        <AreaChart data={data} margin={{ top: 5, right: 5, left: -10, bottom: 5 }}>
+          <defs>
+            <linearGradient id="priceGradient" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="5%" stopColor={chartColors.line} stopOpacity={0.15} />
+              <stop offset="95%" stopColor={chartColors.line} stopOpacity={0} />
+            </linearGradient>
+          </defs>
 
-        {/* Symulacja linii wykresu - prosty SVG */}
-        <Box
-          component="svg"
-          viewBox="0 0 300 150"
-          sx={{
-            position: 'absolute',
-            inset: 0,
-            p: 3,
-          }}
-        >
-          {/* Obszar pod linią */}
-          <path
-            d="M 0 100 L 50 80 L 100 110 L 150 85 L 200 130 L 250 105 L 300 95 L 300 150 L 0 150 Z"
-            fill={CHART_COLORS.area}
-          />
-          {/* Linia główna */}
-          <path
-            d="M 0 100 L 50 80 L 100 110 L 150 85 L 200 130 L 250 105 L 300 95"
-            fill="none"
-            stroke={CHART_COLORS.line}
-            strokeWidth="3"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          />
-          {/* Punkty danych */}
-          {[
-            { x: 0, y: 100 },
-            { x: 50, y: 80 },
-            { x: 100, y: 110 },
-            { x: 150, y: 85 },
-            { x: 200, y: 130 },
-            { x: 250, y: 105 },
-            { x: 300, y: 95 },
-          ].map((point, i) => (
-            <circle
-              key={i}
-              cx={point.x}
-              cy={point.y}
-              r="5"
-              fill={CHART_COLORS.line}
-            />
-          ))}
-          {/* Linia min */}
-          <line
-            x1="0"
-            y1="130"
-            x2="300"
-            y2="130"
-            stroke={CHART_COLORS.min}
-            strokeWidth="2"
-            strokeDasharray="5,5"
-          />
-          {/* Linia max */}
-          <line
-            x1="0"
-            y1="70"
-            x2="300"
-            y2="70"
-            stroke={CHART_COLORS.max}
-            strokeWidth="2"
-            strokeDasharray="5,5"
-          />
-        </Box>
+          <CartesianGrid strokeDasharray="3 3" stroke={chartColors.grid} />
 
-        {/* Overlay z instrukcją */}
-        <Box
-          sx={{
-            position: 'relative',
-            zIndex: 1,
-            textAlign: 'center',
-            p: 2,
-            bgcolor: 'rgba(255,255,255,0.9)',
-            borderRadius: 2,
-          }}
-        >
-          <Typography variant="body2" color="text.secondary" gutterBottom>
-            📊 Wykres Recharts - do implementacji
-          </Typography>
-          <Typography variant="caption" color="text.disabled">
-            npm install recharts
-          </Typography>
-        </Box>
-      </Box>
+          <XAxis
+            dataKey="date"
+            tick={{ fontSize: 12 }}
+            tickLine={false}
+            stroke={chartColors.grid}
+          />
 
-      {/* Oś X - daty */}
-      <Box
-        sx={{
-          display: 'flex',
-          justifyContent: 'space-between',
-          mt: 1,
-          px: 1,
-        }}
-      >
-        {data.map((d, i) => (
-          <Typography key={i} variant="caption" color="text.secondary">
-            {d.date}
-          </Typography>
-        ))}
-      </Box>
+          <YAxis
+            tick={{ fontSize: 12 }}
+            tickLine={false}
+            stroke={chartColors.grid}
+            tickFormatter={(value: number) => `${value} ${currency}`}
+            width={80}
+          />
+
+          <Tooltip content={<CustomTooltip currency={currency} />} />
+
+          <ReferenceLine
+            y={minPrice}
+            stroke={chartColors.min}
+            strokeDasharray="5 5"
+            strokeWidth={1.5}
+          />
+          <ReferenceLine
+            y={maxPrice}
+            stroke={chartColors.max}
+            strokeDasharray="5 5"
+            strokeWidth={1.5}
+          />
+
+          <Area
+            type="monotone"
+            dataKey="price"
+            stroke={chartColors.line}
+            strokeWidth={2.5}
+            fill="url(#priceGradient)"
+            dot={{ r: 4, fill: chartColors.line, strokeWidth: 2, stroke: '#fff' }}
+            activeDot={{ r: 6, fill: chartColors.line, strokeWidth: 2, stroke: '#fff' }}
+          />
+        </AreaChart>
+      </ResponsiveContainer>
     </Paper>
   );
 }
