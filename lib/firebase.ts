@@ -356,3 +356,41 @@ export async function getAllProductsForUpdate(): Promise<Product[]> {
   const snapshot = await getDocs(productsRef);
   return snapshot.docs.map((docSnap) => documentToProduct(docSnap.id, docSnap.data()));
 }
+
+// ============================================
+// Favorites Functions
+// ============================================
+
+// Add a product to user's favorites
+export async function addFavorite(userId: string, productId: string): Promise<void> {
+  const favoriteId = `${userId}_${productId}`;
+  const favoriteRef = doc(db, 'favorites', favoriteId);
+  await setDoc(favoriteRef, {
+    userId,
+    productId,
+    addedAt: Timestamp.now(),
+  });
+}
+
+// Remove a product from user's favorites
+export async function removeFavorite(userId: string, productId: string): Promise<void> {
+  const favoriteId = `${userId}_${productId}`;
+  const favoriteRef = doc(db, 'favorites', favoriteId);
+  await deleteDoc(favoriteRef);
+}
+
+// Get all favorite product IDs for a user
+export async function getFavoriteIds(userId: string): Promise<string[]> {
+  const favoritesRef = collection(db, 'favorites');
+  const q = query(favoritesRef, where('userId', '==', userId));
+  const snapshot = await getDocs(q);
+  return snapshot.docs.map((docSnap) => docSnap.data().productId);
+}
+
+// Check if a specific product is in user's favorites
+export async function isFavorite(userId: string, productId: string): Promise<boolean> {
+  const favoriteId = `${userId}_${productId}`;
+  const favoriteRef = doc(db, 'favorites', favoriteId);
+  const favoriteSnap = await getDoc(favoriteRef);
+  return favoriteSnap.exists();
+}

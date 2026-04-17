@@ -4,12 +4,16 @@ import React from 'react';
 import { Box, Typography, Grid } from '@mui/material';
 import { useAuth } from '@/hooks/useAuth';
 import { useProducts } from '@/hooks/useProducts';
+import { useFavorites } from '@/hooks/useFavorites';
 import AddProductForm from '@/components/products/AddProductForm';
 import ProductList from '@/components/products/ProductList';
 
 export default function SearchPage() {
   const { user } = useAuth();
   const { products, addProduct, refreshProduct, deleteProduct } = useProducts({
+    userId: user?.username,
+  });
+  const { favoriteIds, toggleFavorite } = useFavorites({
     userId: user?.username,
   });
 
@@ -41,6 +45,8 @@ export default function SearchPage() {
             products={recentProducts}
             onRefresh={refreshProduct}
             onDelete={deleteProduct}
+            onToggleFavorite={toggleFavorite}
+            favoriteIds={favoriteIds}
             emptyMessage="Brak ostatnio dodanych produktów"
           />
         </Grid>

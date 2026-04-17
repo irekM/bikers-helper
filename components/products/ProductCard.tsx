@@ -18,6 +18,8 @@ import {
   Delete as DeleteIcon,
   OpenInNew as OpenInNewIcon,
   Store as StoreIcon,
+  Favorite as FavoriteIcon,
+  FavoriteBorder as FavoriteBorderIcon,
 } from '@mui/icons-material';
 import Link from 'next/link';
 import PriceBadge from './PriceBadge';
@@ -28,6 +30,8 @@ interface ProductCardProps {
   product: Product;
   onRefresh?: (productId: string) => void;
   onDelete?: (productId: string) => void;
+  onToggleFavorite?: (productId: string) => Promise<void>;
+  isFavorite?: boolean;
   loading?: boolean;
 }
 
@@ -35,6 +39,8 @@ export default function ProductCard({
   product,
   onRefresh,
   onDelete,
+  onToggleFavorite,
+  isFavorite = false,
   loading,
 }: ProductCardProps) {
   const [refreshing, setRefreshing] = React.useState(false);
@@ -158,6 +164,15 @@ export default function ProductCard({
 
       {/* Actions */}
       <CardActions sx={{ justifyContent: 'flex-end', borderTop: 1, borderColor: 'divider' }}>
+        <Tooltip title={isFavorite ? 'Usuń z ulubionych' : 'Dodaj do ulubionych'}>
+          <IconButton
+            size="small"
+            onClick={() => onToggleFavorite?.(product.id)}
+            color={isFavorite ? 'error' : 'default'}
+          >
+            {isFavorite ? <FavoriteIcon /> : <FavoriteBorderIcon />}
+          </IconButton>
+        </Tooltip>
         <Tooltip title="Otwórz w sklepie">
           <IconButton
             size="small"

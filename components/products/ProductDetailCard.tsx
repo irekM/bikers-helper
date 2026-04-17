@@ -32,15 +32,6 @@ interface ProductDetailCardProps {
   isLoading?: boolean;
 }
 
-/**
- * ProductDetailCard - Skeleton komponent szczegółowej karty produktu
- * 
- * TODO: Dodać logikę:
- * - Obsługa onAddAlert - modal/drawer z formularzem alertu
- * - Obsługa onToggleFavorite - zapis do Firestore
- * - Nawigacja do sklepu (Link)
- * - Pobieranie danych produktu z hooka
- */
 export default function ProductDetailCard({
   product,
   isFavorite = false,
@@ -48,13 +39,8 @@ export default function ProductDetailCard({
   onToggleFavorite,
   isLoading = false,
 }: ProductDetailCardProps) {
-  // Tymczasowy stan - do przeniesienia do rodzica
-  const [favorite, setFavorite] = React.useState(isFavorite);
-
   const handleToggleFavorite = () => {
-    setFavorite(!favorite);
-    // TODO: wywołać onToggleFavorite z propsa
-    // onToggleFavorite?.();
+    onToggleFavorite?.();
   };
 
   
@@ -148,7 +134,7 @@ export default function ProductDetailCard({
             },
           }}
         >
-          {favorite ? (
+          {isFavorite ? (
             <FavoriteIcon color="error" />
           ) : (
             <FavoriteBorderIcon />

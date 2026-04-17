@@ -36,6 +36,8 @@ import ProductDetailCard from '@/components/products/ProductDetailCard';
 import PriceStats from '@/components/products/PriceStats';
 import TwoColumnLayout from '@/components/layout/TwoColumnLayout';
 import { formatDate, calculateAveragePrice, calculatePercentChangeFromHistory, countPriceChanges } from '@/lib/priceCalculation';
+import { useAuth } from '@/hooks/useAuth';
+import { useFavorites } from '@/hooks/useFavorites';
 
 const errorMessage = 'Nie można załadować produktu';
 
@@ -63,6 +65,8 @@ export default function ProductDetailPage({
 }) {
   const { id } = use(params);
   const router = useRouter();
+  const { user } = useAuth();
+  const { toggleFavorite, isFavorite } = useFavorites({ userId: user?.username });
   const [state, setState] = useState<ProductState>({ type: productState.INIT });
   const [refreshing, setRefreshing] = useState(false);
 
@@ -171,7 +175,13 @@ export default function ProductDetailPage({
       >
         Wróć
           </Button>} 
-        leftColumn={<ProductDetailCard product={product} />} 
+        leftColumn={
+          <ProductDetailCard
+            product={product}
+            isFavorite={isFavorite(product.id)}
+            onToggleFavorite={() => toggleFavorite(product.id)}
+          />
+        } 
         rightColumn={<PriceStats stats={stats} currency={currency} />}/>
       </Box>
   );
