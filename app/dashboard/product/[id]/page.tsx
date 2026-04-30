@@ -37,7 +37,7 @@ import PriceStats from '@/components/products/PriceStats';
 import TwoColumnLayout from '@/components/layout/TwoColumnLayout';
 import { formatDate, calculateAveragePrice, calculatePercentChangeFromHistory, countPriceChanges } from '@/lib/priceCalculation';
 import { useAuth } from '@/hooks/useAuth';
-import { useFavorites } from '@/hooks/useFavorites';
+import { useCurrentUserFavorites } from '@/hooks/useCurrentUserFavorites';
 
 const errorMessage = 'Nie można załadować produktu';
 
@@ -66,7 +66,7 @@ export default function ProductDetailPage({
   const { id } = use(params);
   const router = useRouter();
   const { user } = useAuth();
-  const { toggleFavorite, isFavorite } = useFavorites({ userId: user?.username });
+  const { toggleFavorite, isFavorite } = useCurrentUserFavorites();
   const [state, setState] = useState<ProductState>({ type: productState.INIT });
   const [refreshing, setRefreshing] = useState(false);
 
@@ -118,10 +118,6 @@ export default function ProductDetailPage({
       setRefreshing(false);
     }
   };
-
-
-
- 
 
   if (state.type === productState.LOADING || state.type === productState.INIT) {
     return (

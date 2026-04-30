@@ -63,31 +63,21 @@ export function useFavorites({ userId }: UseFavoritesOptions): UseFavoritesRetur
 
       const currentlyFavorite = favoriteIds.includes(productId);
 
-      // Optimistic update — change UI immediately
-      setFavoriteIds((prev) =>
-        currentlyFavorite
-          ? prev.filter((id) => id !== productId)
-          : [...prev, productId]
-      );
-
       try {
-        // Sync with Firestore
+        setError(null);
+
         if (currentlyFavorite) {
           await removeFavorite(userId, productId);
         } else {
           await addFavorite(userId, productId);
         }
+
+        await fetchFavorites();
       } catch (err) {
-        // Rollback on failure — restore previous state
-        setFavoriteIds((prev) =>
-          currentlyFavorite
-            ? [...prev, productId]
-            : prev.filter((id) => id !== productId)
-        );
         setError(err instanceof Error ? err.message : 'Failed to update favorite');
       }
     },
-    [userId, favoriteIds]
+    [userId, favoriteIds, fetchFavorites]
   );
 
   return {

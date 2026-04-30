@@ -2,21 +2,15 @@
 
 import React, { useEffect, useState } from 'react';
 import { Box, Typography, Grid, Paper, Skeleton } from '@mui/material';
-import { useAuth } from '@/hooks/useAuth';
-import { useProducts } from '@/hooks/useProducts';
-import { useFavorites } from '@/hooks/useFavorites';
+import { useCurrentUserProducts } from '@/hooks/useCurrentUserProducts';
+import { useCurrentUserFavorites } from '@/hooks/useCurrentUserFavorites';
 import StatsCards from '@/components/dashboard/StatsCards';
 import ProductList from '@/components/products/ProductList';
 import type { DashboardStats } from '@/types';
 
 export default function DashboardPage() {
-  const { user } = useAuth();
-  const { products, loading, error, refreshProduct, deleteProduct } = useProducts({
-    userId: user?.username,
-  });
-  const { favoriteIds, toggleFavorite } = useFavorites({
-    userId: user?.username,
-  });
+  const { products, loading, error, refreshProduct, deleteProduct } = useCurrentUserProducts();
+  const { favoriteIds, toggleFavorite } = useCurrentUserFavorites();
 
   // Calculate stats from products
   const stats: DashboardStats = React.useMemo(() => {

@@ -10,18 +10,8 @@ import {
 } from '@mui/material';
 import NavigateNextIcon from '@mui/icons-material/NavigateNext';
 import HomeIcon from '@mui/icons-material/Home';
+import { useCategories } from '@/hooks/useCategories';
 //import {Tooltip} from '@mui/material';
-
-// Dummy data - do zastąpienia prawdziwymi danymi
-const MOCK_CATEGORIES = [
-  { id: 'helmets', name: 'Kaski', icon: '🪖' },
-  { id: 'jackets', name: 'Kurtki', icon: '🧥' },
-  { id: 'pants', name: 'Spodnie', icon: '👖' },
-  { id: 'gloves', name: 'Rękawice', icon: '🧤' },
-  { id: 'boots', name: 'Buty', icon: '👢' },
-  { id: 'accessories', name: 'Akcesoria', icon: '🎒' },
-  { id: 'parts', name: 'Części', icon: '⚙️' },
-];
 
 interface CategoryBreadcrumbsProps {
   currentCategory?: string;
@@ -43,16 +33,13 @@ export default function CategoryBreadcrumbs({
   productName,
 }: CategoryBreadcrumbsProps) {
   const router = useRouter();
-
-  //changed from useRouter to usePathname and useSearchParams to get category from URL
-  //const category = MOCK_CATEGORIES.find((c) => c.id === currentCategory);
-
   const pathname = usePathname();
   const searchParams = useSearchParams();
+  const { categories } = useCategories();
   const categoryFromURL = searchParams.get('category');
 
   const activeCategory = categoryFromURL || currentCategory;
-  const category = MOCK_CATEGORIES.find((c) => c.id === activeCategory);
+  const category = categories.find((c) => c.id === activeCategory);
 
   return (
     <Box sx={{ mb: 3 }}>
@@ -123,15 +110,15 @@ export default function CategoryBreadcrumbs({
           mt: 2,
         }}
       >
-        {MOCK_CATEGORIES.map((cat) => (
+        {categories.map((cat) => (
           <Chip
             key={cat.id}
             label={`${cat.icon} ${cat.name}`}
             size="small"
             clickable
             onClick={() => router.push(`/dashboard/search?category=${cat.id}`)}
-            variant={cat.id === currentCategory ? 'filled' : 'outlined'}
-            color={cat.id === currentCategory ? 'primary' : 'default'}
+            variant={cat.id === activeCategory ? 'filled' : 'outlined'}
+            color={cat.id === activeCategory ? 'primary' : 'default'}
             sx={{
               fontWeight: 500,
               transition: 'all 0.2s ease',

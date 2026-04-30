@@ -1,9 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { randomUUID } from 'crypto';
 import { doc, getDoc, setDoc, Timestamp } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import type { ApiResponse } from '@/types';
 
 interface AuthResponseData {
+  id: string;
   username: string;
 }
 
@@ -44,7 +46,10 @@ export async function POST(
       );
     }
 
+    const userId = randomUUID();
+
     await setDoc(userRef, {
+      id: userId,
       username,
       password,
       createdAt: Timestamp.now(),
@@ -54,7 +59,7 @@ export async function POST(
     return NextResponse.json(
       {
         success: true,
-        data: { username },
+        data: { id: userId, username },
       },
       { status: 201 }
     );

@@ -47,7 +47,7 @@ export default function LoginPage() {
         return;
       }
 
-      setUser({ username: data.data.username });
+      setUser({ id: data.data.id, username: data.data.username });
       router.push('/dashboard');
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Błąd logowania. Spróbuj ponownie.');

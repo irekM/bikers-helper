@@ -2,19 +2,28 @@
 
 import React from 'react';
 import { Box, Typography } from '@mui/material';
+import { useCurrentUserProducts } from '@/hooks/useCurrentUserProducts';
+import { useCurrentUserFavorites } from '@/hooks/useCurrentUserFavorites';
 import { useAuth } from '@/hooks/useAuth';
-import { useProducts } from '@/hooks/useProducts';
-import { useFavorites } from '@/hooks/useFavorites';
 import ProductList from '@/components/products/ProductList';
 
 export default function FavoritesPage() {
   const { user } = useAuth();
-  const { products, loading: productsLoading, error, refreshProduct, deleteProduct } = useProducts({
-    userId: user?.username,
-  });
-  const { favoriteIds, loading: favoritesLoading, toggleFavorite } = useFavorites({
-    userId: user?.username,
-  });
+  const { products, loading: productsLoading, error, refreshProduct, deleteProduct } = useCurrentUserProducts();
+  const { favoriteIds, loading: favoritesLoading, toggleFavorite } = useCurrentUserFavorites();
+
+  if (!user) {
+    return (
+      <Box>
+        <Typography variant="h4" fontWeight={700} gutterBottom>
+          Ulubione produkty
+        </Typography>
+        <Typography variant="body1" color="text.secondary">
+          Musisz być zalogowany, aby zobaczyć ulubione produkty.
+        </Typography>
+      </Box>
+    );
+  }
 
   // Filter products to only show favorites
   const favoriteProducts = products.filter((product) =>

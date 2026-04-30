@@ -4,6 +4,7 @@ import { db } from '@/lib/firebase';
 import type { ApiResponse } from '@/types';
 
 interface AuthResponseData {
+  id: string;
   username: string;
 }
 
@@ -60,7 +61,7 @@ export async function POST(
 
     return NextResponse.json({
       success: true,
-      data: { username },
+      data: { id: userData.id, username },
     });
   } catch (error) {
     console.error('Login error:', error);
