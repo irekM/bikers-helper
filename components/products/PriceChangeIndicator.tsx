@@ -88,11 +88,11 @@ export default function PriceChangeIndicator({
     return `${prefix}${changePercent}%`;
   };
   // Tekst do wyświetlenia
-  const getText = () => {
-    const parts: string[] = [];
-    if (showAbsolute) parts.push(formatAbsolute());
-    if (showPercentage) parts.push(`(${formatPercent()})`);
-    return parts.join(' ');
+  const buildPriceChangeText = () => {
+    const priceChangeSegments: string[] = [];
+    if (showAbsolute) priceChangeSegments.push(formatAbsolute());
+    if (showPercentage) priceChangeSegments.push(`(${formatPercent()})`);
+    return priceChangeSegments.join(' ');
   };
 
   return (
@@ -119,7 +119,7 @@ export default function PriceChangeIndicator({
         variant={size === 'small' ? 'caption' : size === 'medium' ? 'body2' : 'body1'}
         fontWeight={600}
       >
-        {getText()}
+        {buildPriceChangeText()}
       </Typography>
     </Box>
   );

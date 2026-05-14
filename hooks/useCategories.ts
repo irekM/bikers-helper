@@ -1,26 +1,12 @@
 'use client';
 
-export interface CategoryItem {
-  id: string;
-  name: string;
-  icon: string;
-}
+import { MOCK_CATEGORIES, type Category } from '@/lib/mocks/categories';
 
 interface UseCategoriesReturn {
-  categories: CategoryItem[];
+  categories: Category[];
   loading: boolean;
   error: string | null;
 }
-
-const MOCK_CATEGORIES: CategoryItem[] = [
-  { id: 'helmets', name: 'Kaski', icon: '🪖' },
-  { id: 'jackets', name: 'Kurtki', icon: '🧥' },
-  { id: 'pants', name: 'Spodnie', icon: '👖' },
-  { id: 'gloves', name: 'Rękawice', icon: '🧤' },
-  { id: 'boots', name: 'Buty', icon: '👢' },
-  { id: 'accessories', name: 'Akcesoria', icon: '🎒' },
-  { id: 'parts', name: 'Części', icon: '⚙️' },
-];
 
 /**
  * Provides categories for UI components.

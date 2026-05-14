@@ -3,14 +3,7 @@
 import React from 'react';
 import { Box, Chip, Typography, Paper } from '@mui/material';
 import FilterListIcon from '@mui/icons-material/FilterList';
-
-// Typy kategorii
-interface Category {
-  id: string;
-  name: string;
-  icon: string;
-  count?: number;
-}
+import { MOCK_CATEGORIES, type Category } from '@/lib/mocks/categories';
 
 interface CategoryFilterProps {
   categories?: Category[];
@@ -18,17 +11,6 @@ interface CategoryFilterProps {
   onChange?: (selected: string[]) => void;
   multiSelect?: boolean;
 }
-
-// Domyślne kategorie - do zastąpienia danymi z bazy
-const DEFAULT_CATEGORIES: Category[] = [
-  { id: 'helmets', name: 'Kaski', icon: '🪖', count: 24 },
-  { id: 'jackets', name: 'Kurtki', icon: '🧥', count: 18 },
-  { id: 'pants', name: 'Spodnie', icon: '👖', count: 12 },
-  { id: 'gloves', name: 'Rękawice', icon: '🧤', count: 31 },
-  { id: 'boots', name: 'Buty', icon: '👢', count: 15 },
-  { id: 'accessories', name: 'Akcesoria', icon: '🎒', count: 42 },
-  { id: 'parts', name: 'Części', icon: '⚙️', count: 67 },
-];
 
 /**
  * CategoryFilter - Skeleton komponent filtrowania kategorii
@@ -40,7 +22,7 @@ const DEFAULT_CATEGORIES: Category[] = [
  * - Multi-select vs single-select mode
  */
 export default function CategoryFilter({
-  categories = DEFAULT_CATEGORIES,
+  categories = MOCK_CATEGORIES,
   selectedCategories = [],
   onChange,
   multiSelect = true,

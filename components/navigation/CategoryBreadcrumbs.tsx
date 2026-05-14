@@ -11,22 +11,11 @@ import {
 import NavigateNextIcon from '@mui/icons-material/NavigateNext';
 import HomeIcon from '@mui/icons-material/Home';
 import { useCategories } from '@/hooks/useCategories';
-//import {Tooltip} from '@mui/material';
 
 interface CategoryBreadcrumbsProps {
   currentCategory?: string;
   productName?: string;
 }
-
-/**
- * CategoryBreadcrumbs - Skeleton komponent nawigacji breadcrumbs
- * 
- * TODO: Dodać logikę:
-
- * - Dynamiczne generowanie breadcrumbs
- */
-
-
 
 export default function CategoryBreadcrumbs({
   currentCategory = 'helmets',
