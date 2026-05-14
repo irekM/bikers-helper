@@ -40,14 +40,14 @@ export default function LoginPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ username, password }),
       });
-      const data = await response.json();
+      const { success, data: user, error } = await response.json();
 
-      if (!response.ok || !data.success) {
-        setError(data?.error?.message || 'Błąd logowania. Spróbuj ponownie.');
+      if (!response.ok || !success) {
+        setError(error?.message || 'Błąd logowania. Spróbuj ponownie.');
         return;
       }
 
-      setUser({ username: data.data.username });
+      setUser(user);
       router.push('/dashboard');
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Błąd logowania. Spróbuj ponownie.');

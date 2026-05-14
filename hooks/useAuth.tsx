@@ -3,6 +3,7 @@
 import React, { createContext, useContext, useEffect, useMemo, useState } from 'react';
 
 interface AuthUser {
+  id: string;
   username: string;
 }
 
@@ -27,7 +28,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     if (stored) {
       try {
         const parsed = JSON.parse(stored) as AuthUser;
-        if (parsed?.username) {
+        if (parsed?.id && parsed?.username) {
           setUserState(parsed);
         }
       } catch {

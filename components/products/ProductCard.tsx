@@ -18,15 +18,20 @@ import {
   Delete as DeleteIcon,
   OpenInNew as OpenInNewIcon,
   Store as StoreIcon,
+  Favorite as FavoriteIcon,
+  FavoriteBorder as FavoriteBorderIcon,
 } from '@mui/icons-material';
 import Link from 'next/link';
 import PriceBadge from './PriceBadge';
 import type { Product } from '@/types';
+import { formatPrice, formatDate } from '@/lib/priceCalculation';
 
 interface ProductCardProps {
   product: Product;
   onRefresh?: (productId: string) => void;
   onDelete?: (productId: string) => void;
+  onToggleFavorite?: (productId: string) => Promise<void>;
+  isFavorite?: boolean;
   loading?: boolean;
 }
 
@@ -34,6 +39,8 @@ export default function ProductCard({
   product,
   onRefresh,
   onDelete,
+  onToggleFavorite,
+  isFavorite = false,
   loading,
 }: ProductCardProps) {
   const [refreshing, setRefreshing] = React.useState(false);
@@ -49,22 +56,7 @@ export default function ProductCard({
     }
   };
 
-  const formatPrice = (price: number, currency: string) => {
-    return new Intl.NumberFormat('pl-PL', {
-      style: 'currency',
-      currency: currency,
-    }).format(price);
-  };
 
-  const formatDate = (date: Date) => {
-    return new Intl.DateTimeFormat('pl-PL', {
-      day: '2-digit',
-      month: '2-digit',
-      year: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
-    }).format(new Date(date));
-  };
 
   if (loading) {
     return (
@@ -172,6 +164,15 @@ export default function ProductCard({
 
       {/* Actions */}
       <CardActions sx={{ justifyContent: 'flex-end', borderTop: 1, borderColor: 'divider' }}>
+        <Tooltip title={isFavorite ? 'Usuń z ulubionych' : 'Dodaj do ulubionych'}>
+          <IconButton
+            size="small"
+            onClick={() => onToggleFavorite?.(product.id)}
+            color={isFavorite ? 'error' : 'default'}
+          >
+            {isFavorite ? <FavoriteIcon /> : <FavoriteBorderIcon />}
+          </IconButton>
+        </Tooltip>
         <Tooltip title="Otwórz w sklepie">
           <IconButton
             size="small"

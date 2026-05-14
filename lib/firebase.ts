@@ -356,3 +356,63 @@ export async function getAllProductsForUpdate(): Promise<Product[]> {
   const snapshot = await getDocs(productsRef);
   return snapshot.docs.map((docSnap) => documentToProduct(docSnap.id, docSnap.data()));
 }
+
+// ============================================
+// Favorites Functions
+// ============================================
+
+// Add a product to user's favorites
+export async function addFavorite(userId: string, productId: string): Promise<void> {
+  const favoritesRef = collection(db, 'favorites');
+  const existingFavoriteQuery = query(
+    favoritesRef,
+    where('userId', '==', userId),
+    where('productId', '==', productId),
+    limit(1)
+  );
+  const existingFavoriteSnapshot = await getDocs(existingFavoriteQuery);
+
+  if (!existingFavoriteSnapshot.empty) {
+    return;
+  }
+
+  await addDoc(favoritesRef, {
+    userId,
+    productId,
+    addedAt: Timestamp.now(),
+  });
+}
+
+// Remove a product from user's favorites
+export async function removeFavorite(userId: string, productId: string): Promise<void> {
+  const favoritesRef = collection(db, 'favorites');
+  const favoriteQuery = query(
+    favoritesRef,
+    where('userId', '==', userId),
+    where('productId', '==', productId)
+  );
+  const snapshot = await getDocs(favoriteQuery);
+
+  await Promise.all(snapshot.docs.map((favoriteDoc) => deleteDoc(favoriteDoc.ref)));
+}
+
+// Get all favorite product IDs for a user
+export async function getFavoriteIds(userId: string): Promise<string[]> {
+  const favoritesRef = collection(db, 'favorites');
+  const q = query(favoritesRef, where('userId', '==', userId));
+  const snapshot = await getDocs(q);
+  return snapshot.docs.map((docSnap) => docSnap.data().productId);
+}
+
+// Check if a specific product is in user's favorites
+export async function isFavorite(userId: string, productId: string): Promise<boolean> {
+  const favoritesRef = collection(db, 'favorites');
+  const favoriteQuery = query(
+    favoritesRef,
+    where('userId', '==', userId),
+    where('productId', '==', productId),
+    limit(1)
+  );
+  const snapshot = await getDocs(favoriteQuery);
+  return !snapshot.empty;
+}

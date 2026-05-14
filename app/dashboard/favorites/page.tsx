@@ -1,0 +1,58 @@
+'use client';
+
+import React from 'react';
+import { Box, Typography } from '@mui/material';
+import { useCurrentUserProducts } from '@/hooks/useCurrentUserProducts';
+import { useCurrentUserFavorites } from '@/hooks/useCurrentUserFavorites';
+import { useAuth } from '@/hooks/useAuth';
+import ProductList from '@/components/products/ProductList';
+
+export default function FavoritesPage() {
+  const { user } = useAuth();
+  const { products, loading: productsLoading, error, refreshProduct, deleteProduct } = useCurrentUserProducts();
+  const { favoriteIds, loading: favoritesLoading, toggleFavorite } = useCurrentUserFavorites();
+
+  if (!user) {
+    return (
+      <Box>
+        <Typography variant="h4" fontWeight={700} gutterBottom>
+          Ulubione produkty
+        </Typography>
+        <Typography variant="body1" color="text.secondary">
+          Musisz być zalogowany, aby zobaczyć ulubione produkty.
+        </Typography>
+      </Box>
+    );
+  }
+
+  // Filter products to only show favorites
+  const favoriteProducts = products.filter((product) =>
+    favoriteIds.includes(product.id)
+  );
+
+  const loading = productsLoading || favoritesLoading;
+
+  return (
+    <Box>
+      {/* Header */}
+      <Typography variant="h4" fontWeight={700} gutterBottom>
+        Ulubione produkty
+      </Typography>
+      <Typography variant="body1" color="text.secondary" sx={{ mb: 4 }}>
+        Produkty dodane do ulubionych ({favoriteProducts.length})
+      </Typography>
+
+      {/* Product List */}
+      <ProductList
+        products={favoriteProducts}
+        loading={loading}
+        error={error}
+        onRefresh={refreshProduct}
+        onDelete={deleteProduct}
+        onToggleFavorite={toggleFavorite}
+        favoriteIds={favoriteIds}
+        emptyMessage="Nie masz jeszcze ulubionych produktów. Kliknij ❤ na karcie produktu, aby dodać go tutaj."
+      />
+    </Box>
+  );
+}

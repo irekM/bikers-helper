@@ -11,6 +11,8 @@ interface ProductListProps {
   error?: string | null;
   onRefresh?: (productId: string) => Promise<boolean>;
   onDelete?: (productId: string) => Promise<void>;
+  onToggleFavorite?: (productId: string) => Promise<void>;
+  favoriteIds?: string[];
   emptyMessage?: string;
 }
 
@@ -20,6 +22,8 @@ export default function ProductList({
   error,
   onRefresh,
   onDelete,
+  onToggleFavorite,
+  favoriteIds,
   emptyMessage = 'Brak produktów do wyświetlenia',
 }: ProductListProps) {
   if (error) {
@@ -71,6 +75,8 @@ export default function ProductList({
             product={product}
             onRefresh={onRefresh}
             onDelete={onDelete}
+            onToggleFavorite={onToggleFavorite}
+            isFavorite={favoriteIds?.includes(product.id)}
           />
         </Grid>
       ))}
