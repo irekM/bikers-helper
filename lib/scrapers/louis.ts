@@ -3,6 +3,7 @@ import * as cheerio from 'cheerio';
 import type { ScrapedProduct } from '@/types';
 import { BaseScraper } from './base';
 import {
+  assertValidScrapedData,
   parsePrice,
   detectCurrency,
   cleanProductName,
@@ -13,8 +14,7 @@ export class LouisScraper extends BaseScraper {
   shopName = 'Louis';
   supportedDomains = ['louis.eu', 'louis.pl', 'louis.de'];
 
-  async scrape(url: string): Promise<ScrapedProduct> {
-    const html = await this.fetchHtml(url);
+  private parseProduct(html: string, url: string, sourceType: 'http' | 'browser'): ScrapedProduct {
     const $ = cheerio.load(html);
 
     // Product name - try multiple selectors
@@ -40,6 +40,7 @@ export class LouisScraper extends BaseScraper {
     }
 
     const price = parsePrice(priceText);
+  assertValidScrapedData(name, price);
     const currency = detectCurrency(priceText);
 
     // Image
@@ -66,7 +67,19 @@ export class LouisScraper extends BaseScraper {
       originalUrl: url,
       shopName: this.shopName,
       scrapedAt: new Date(),
+      sourceType,
+      availabilityText,
     };
+  }
+
+  async scrape(url: string): Promise<ScrapedProduct> {
+    const html = await this.fetchHtml(url);
+    return this.parseProduct(html, url, 'http');
+  }
+
+  async scrapeWithBrowser(url: string): Promise<ScrapedProduct> {
+    const html = await this.fetchHtmlWithBrowser(url);
+    return this.parseProduct(html, url, 'browser');
   }
 }
 

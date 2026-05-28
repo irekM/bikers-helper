@@ -3,6 +3,7 @@ import * as cheerio from 'cheerio';
 import type { ScrapedProduct } from '@/types';
 import { BaseScraper } from './base';
 import {
+  assertValidScrapedData,
   parsePrice,
   detectCurrency,
   cleanProductName,
@@ -13,8 +14,7 @@ export class XLMotoScraper extends BaseScraper {
   shopName = 'XLMoto';
   supportedDomains = ['xlmoto.pl', 'xlmoto.eu', 'xlmoto.de', 'xlmoto.com'];
 
-  async scrape(url: string): Promise<ScrapedProduct> {
-    const html = await this.fetchHtml(url);
+  private parseProduct(html: string, url: string, sourceType: 'http' | 'browser'): ScrapedProduct {
     const $ = cheerio.load(html);
 
     // Product name
@@ -22,6 +22,7 @@ export class XLMotoScraper extends BaseScraper {
       $('h1.product-name').text().trim() ||
       $('h1[itemprop="name"]').text().trim() ||
       $('.product-title h1').text().trim() ||
+      $('[data-testid="product-name"]').first().text().trim() ||
       $('h1').first().text().trim();
 
     if (!name) {
@@ -35,6 +36,7 @@ export class XLMotoScraper extends BaseScraper {
       $('[data-price]').first().attr('data-price') ||
       $('.price-wrapper .price').first().text().trim() ||
       $('[itemprop="price"]').attr('content') ||
+      $('[data-testid="product-price"]').first().text().trim() ||
       $('.product-price').first().text().trim();
 
     if (!priceText) {
@@ -42,6 +44,7 @@ export class XLMotoScraper extends BaseScraper {
     }
 
     const price = parsePrice(priceText);
+  assertValidScrapedData(name, price);
     const currency = detectCurrency(priceText) || 'PLN';
 
     // Image
@@ -73,7 +76,19 @@ export class XLMotoScraper extends BaseScraper {
       originalUrl: url,
       shopName: this.shopName,
       scrapedAt: new Date(),
+      sourceType,
+      availabilityText: typeof availabilityText === 'string' ? availabilityText : undefined,
     };
+  }
+
+  async scrape(url: string): Promise<ScrapedProduct> {
+    const html = await this.fetchHtml(url);
+    return this.parseProduct(html, url, 'http');
+  }
+
+  async scrapeWithBrowser(url: string): Promise<ScrapedProduct> {
+    const html = await this.fetchHtmlWithBrowser(url);
+    return this.parseProduct(html, url, 'browser');
   }
 }
 

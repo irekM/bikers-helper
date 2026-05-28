@@ -3,12 +3,20 @@ import { isValidUrl } from './utils';
 import { scrapeRequestSchema, scrapedProductSchema } from './schemas';
 import type { ScrapeRequestOptions, ScrapeRunResult, ScrapedProduct } from '@/types';
 
-function resolveMode(mode?: ScrapeRequestOptions['mode']): 'http' | 'browser' {
+function resolveMode(mode?: ScrapeRequestOptions['mode']): 'auto' | 'http' | 'browser' {
   if (mode === 'browser') {
     return 'browser';
   }
 
-  return 'http';
+  if (mode === 'http') {
+    return 'http';
+  }
+
+  if (process.env.SCRAPER_USE_PLAYWRIGHT_DEFAULT === 'true') {
+    return 'browser';
+  }
+
+  return 'auto';
 }
 
 function buildError(code: string, message: string) {
@@ -51,24 +59,9 @@ export async function runScraper(url: string, options: ScrapeRequestOptions = {}
   const resolvedMode = resolveMode(parsedRequest.data.mode);
 
   try {
-    if (resolvedMode === 'browser') {
-      return {
-        success: false,
-        error: buildError(
-          'BROWSER_MODE_NOT_IMPLEMENTED',
-          'Browser mode is scaffolded in step 0/1 and will be implemented in the next iteration.'
-        ),
-        meta: {
-          url: parsedRequest.data.url,
-          mode: parsedRequest.data.mode ?? 'browser',
-          resolvedMode,
-          durationMs: Date.now() - startedAt,
-        },
-      };
-    }
-
-    const data = await scrapeProduct(parsedRequest.data.url);
+    const data = await scrapeProduct(parsedRequest.data.url, resolvedMode);
     const normalizedData = scrapedProductSchema.parse(data) as ScrapedProduct;
+    const finalMode = normalizedData.sourceType ?? (resolvedMode === 'auto' ? 'http' : resolvedMode);
 
     return {
       success: true,
@@ -76,12 +69,13 @@ export async function runScraper(url: string, options: ScrapeRequestOptions = {}
       meta: {
         url: parsedRequest.data.url,
         mode: parsedRequest.data.mode ?? 'auto',
-        resolvedMode,
+        resolvedMode: finalMode,
         durationMs: Date.now() - startedAt,
       },
     };
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Failed to scrape product';
+    const finalMode = resolvedMode === 'auto' ? 'http' : resolvedMode;
 
     return {
       success: false,
@@ -89,7 +83,7 @@ export async function runScraper(url: string, options: ScrapeRequestOptions = {}
       meta: {
         url: parsedRequest.data.url,
         mode: parsedRequest.data.mode ?? 'auto',
-        resolvedMode,
+        resolvedMode: finalMode,
         durationMs: Date.now() - startedAt,
       },
     };

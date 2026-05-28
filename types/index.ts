@@ -106,6 +106,7 @@ export interface Scraper {
   shopName: string;
   supportedDomains: string[];
   scrape(url: string): Promise<ScrapedProduct>;
+  scrapeWithBrowser?(url: string): Promise<ScrapedProduct>;
 }
 
 export type ScrapeMode = 'auto' | 'http' | 'browser';
