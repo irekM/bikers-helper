@@ -1,7 +1,7 @@
 // API Route: POST /api/products/[id]/refresh - Manually refresh product price
 import { NextRequest, NextResponse } from 'next/server';
 import { getProduct, updateProductPrice } from '@/lib/firebase';
-import { scrapeProduct } from '@/lib/scrapers';
+import { runScraper } from '@/lib/scrapers/runner';
 import type { ApiResponse, Product } from '@/types';
 
 export async function POST(
@@ -26,7 +26,22 @@ export async function POST(
     }
 
     // Scrape current price
-    const scrapedData = await scrapeProduct(product.url);
+    const result = await runScraper(product.url);
+
+    if (!result.success || !result.data) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: {
+            code: result.error?.code || 'SCRAPER_FAILED',
+            message: result.error?.message || 'Failed to refresh product price',
+          },
+        },
+        { status: 500 }
+      );
+    }
+
+    const scrapedData = result.data;
 
     // Check if price changed
     const priceChanged = scrapedData.price !== product.currentPrice;
