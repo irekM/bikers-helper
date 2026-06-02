@@ -1,6 +1,7 @@
 // Base scraper interface and abstract implementation
 import type { ScrapedProduct, Scraper } from '@/types';
 import { defaultHeaders } from './utils';
+import { fetchRenderedHtml } from './playwrightBase';
 
 /**
  * Abstract base class for scrapers
@@ -31,6 +32,22 @@ export abstract class BaseScraper implements Scraper {
     }
 
     return response.text();
+  }
+
+  /**
+   * Fetch fully rendered HTML with Playwright for dynamic pages.
+   */
+  protected async fetchHtmlWithBrowser(url: string): Promise<string> {
+    return fetchRenderedHtml(url, {
+      timeoutMs: Number(process.env.SCRAPER_BROWSER_TIMEOUT_MS ?? 30000),
+    });
+  }
+
+  /**
+   * Optional browser mode. Concrete scrapers can override it when needed.
+   */
+  async scrapeWithBrowser(_url: string): Promise<ScrapedProduct> {
+    throw new Error(`${this.shopName} does not support browser mode yet`);
   }
 
   /**

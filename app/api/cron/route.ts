@@ -1,7 +1,7 @@
 // API Route: POST /api/cron - Scheduled price check (called by external CRON service)
 import { NextRequest, NextResponse } from 'next/server';
 import { getAllProductsForUpdate, updateProductPrice } from '@/lib/firebase';
-import { scrapeProduct } from '@/lib/scrapers';
+import { runScraper } from '@/lib/scrapers/runner';
 import { sleep } from '@/lib/scrapers/utils';
 import type { ApiResponse } from '@/types';
 
@@ -46,7 +46,13 @@ export async function POST(request: NextRequest): Promise<NextResponse<ApiRespon
     // Process each product with rate limiting
     for (const product of products) {
       try {
-        const scrapedData = await scrapeProduct(product.url);
+        const result = await runScraper(product.url);
+
+        if (!result.success || !result.data) {
+          throw new Error(result.error?.message || 'Failed to scrape product');
+        }
+
+        const scrapedData = result.data;
 
         // Track price changes
         if (scrapedData.price !== product.currentPrice) {

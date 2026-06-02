@@ -97,12 +97,37 @@ export interface ScrapedProduct {
   originalUrl: string;
   shopName: string;
   scrapedAt: Date;
+  sourceType?: 'http' | 'browser';
+  externalProductId?: string;
+  availabilityText?: string;
 }
 
 export interface Scraper {
   shopName: string;
   supportedDomains: string[];
   scrape(url: string): Promise<ScrapedProduct>;
+  scrapeWithBrowser?(url: string): Promise<ScrapedProduct>;
+}
+
+export type ScrapeMode = 'auto' | 'http' | 'browser';
+
+export interface ScrapeRequestOptions {
+  mode?: ScrapeMode;
+}
+
+export interface ScrapeRunResult {
+  success: boolean;
+  data?: ScrapedProduct;
+  error?: {
+    code: string;
+    message: string;
+  };
+  meta: {
+    url: string;
+    mode: ScrapeMode;
+    resolvedMode: 'http' | 'browser';
+    durationMs: number;
+  };
 }
 
 // ============================================

@@ -18,6 +18,7 @@ import {
   Dashboard as DashboardIcon,
   Favorite as FavoriteIcon,
   Search as SearchIcon,
+  Science as ScienceIcon,
   Settings as SettingsIcon,
   Logout as LogoutIcon,
 } from '@mui/icons-material';
@@ -47,6 +48,7 @@ export default function Navbar() {
     { label: 'Dashboard', href: '/dashboard', icon: <DashboardIcon /> },
     { label: 'Śledzone', href: '/dashboard/favorites', icon: <FavoriteIcon /> },
     { label: 'Dodaj', href: '/dashboard/search', icon: <SearchIcon /> },
+    { label: 'Scrape Lab', href: '/dashboard/scrape-lab', icon: <ScienceIcon /> },
   ];
 
   const isActive = (href: string) => {

@@ -88,14 +88,31 @@ export async function scrapeWithRetry(
   maxRetries = 3,
   baseDelay = 1000
 ): Promise<ScrapedProduct> {
+  return retryOperation(
+    () => scraper.scrape(url),
+    `Scrape attempt failed for ${url}`,
+    maxRetries,
+    baseDelay
+  );
+}
+
+/**
+ * Generic retry wrapper for scraper-related operations.
+ */
+export async function retryOperation<T>(
+  operation: () => Promise<T>,
+  errorLabel: string,
+  maxRetries = 3,
+  baseDelay = 1000
+): Promise<T> {
   let lastError: Error = new Error('Unknown error');
 
   for (let attempt = 1; attempt <= maxRetries; attempt++) {
     try {
-      return await scraper.scrape(url);
+      return await operation();
     } catch (error) {
       lastError = error instanceof Error ? error : new Error(String(error));
-      console.warn(`Scrape attempt ${attempt} failed for ${url}:`, lastError.message);
+      console.warn(`${errorLabel} (${attempt}/${maxRetries}):`, lastError.message);
 
       if (attempt < maxRetries) {
         const delay = baseDelay * Math.pow(2, attempt - 1); // Exponential backoff
@@ -165,5 +182,18 @@ export function normalizeImageUrl(imageUrl: string | undefined, baseUrl: string)
     return new URL(imageUrl, base.origin).href;
   } catch {
     return undefined;
+  }
+}
+
+/**
+ * Fail fast when scraper returned obviously invalid data.
+ */
+export function assertValidScrapedData(name: string, price: number): void {
+  if (!name || cleanProductName(name).length < 3) {
+    throw new Error('Could not extract a valid product name');
+  }
+
+  if (!Number.isFinite(price) || price <= 0) {
+    throw new Error('Could not extract a valid product price');
   }
 }

@@ -1,61 +1,53 @@
 // API Route: POST /api/scrape - Scrape product data from URL
 import { NextRequest, NextResponse } from 'next/server';
-import { scrapeProduct, isUrlSupported, getSupportedShops } from '@/lib/scrapers';
-import { isValidUrl } from '@/lib/scrapers/utils';
+import { runScraper } from '@/lib/scrapers/runner';
+import { scrapeRequestSchema } from '@/lib/scrapers/schemas';
 import type { ApiResponse, ScrapedProduct } from '@/types';
 
 export async function POST(request: NextRequest): Promise<NextResponse<ApiResponse<ScrapedProduct>>> {
   try {
     const body = await request.json();
-    const { url } = body;
+    const parsed = scrapeRequestSchema.safeParse(body);
 
-    // Validate URL
-    if (!url || typeof url !== 'string') {
+    if (!parsed.success) {
       return NextResponse.json(
         {
           success: false,
           error: {
             code: 'VALIDATION_ERROR',
-            message: 'URL is required',
+            message: parsed.error.issues[0]?.message || 'Invalid scrape request',
           },
         },
         { status: 400 }
       );
     }
 
-    if (!isValidUrl(url)) {
+    const result = await runScraper(parsed.data.url, { mode: parsed.data.mode });
+
+    if (!result.success) {
+      const status = result.error?.code === 'VALIDATION_ERROR' ? 400 : 500;
+
       return NextResponse.json(
         {
           success: false,
           error: {
-            code: 'VALIDATION_ERROR',
-            message: 'Invalid URL format',
+            code: result.error?.code || 'SCRAPER_FAILED',
+            message: result.error?.message || 'Failed to scrape product',
           },
         },
-        { status: 400 }
+        { status }
       );
     }
-
-    // Check if shop is supported
-    if (!isUrlSupported(url)) {
-      return NextResponse.json(
-        {
-          success: false,
-          error: {
-            code: 'SCRAPER_NOT_FOUND',
-            message: `This shop is not supported yet. Supported shops: ${getSupportedShops().join(', ')}`,
-          },
-        },
-        { status: 400 }
-      );
-    }
-
-    // Scrape the product
-    const scrapedData = await scrapeProduct(url);
 
     return NextResponse.json({
       success: true,
-      data: scrapedData,
+      data: result.data,
+      meta: {
+        total: 1,
+        page: 1,
+        limit: 1,
+        scrape: result.meta,
+      },
     });
   } catch (error) {
     console.error('Scraping error:', error);
