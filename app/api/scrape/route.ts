@@ -42,6 +42,12 @@ export async function POST(request: NextRequest): Promise<NextResponse<ApiRespon
     return NextResponse.json({
       success: true,
       data: result.data,
+      meta: {
+        total: 1,
+        page: 1,
+        limit: 1,
+        scrape: result.meta,
+      },
     });
   } catch (error) {
     console.error('Scraping error:', error);

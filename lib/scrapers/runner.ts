@@ -1,5 +1,6 @@
 import { scrapeProduct } from './index';
-import { isValidUrl } from './utils';
+import { scrapeBasicProductInPageContext } from './playwrightBase';
+import { extractDomain, isValidUrl } from './utils';
 import { scrapeRequestSchema, scrapedProductSchema } from './schemas';
 import type { ScrapeRequestOptions, ScrapeRunResult, ScrapedProduct } from '@/types';
 
@@ -59,7 +60,17 @@ export async function runScraper(url: string, options: ScrapeRequestOptions = {}
   const resolvedMode = resolveMode(parsedRequest.data.mode);
 
   try {
-    const data = await scrapeProduct(parsedRequest.data.url, resolvedMode);
+    const data =
+      resolvedMode === 'browser'
+        ? {
+            ...(await scrapeBasicProductInPageContext(parsedRequest.data.url)),
+            originalUrl: parsedRequest.data.url,
+            shopName: extractDomain(parsedRequest.data.url) || 'unknown-shop',
+            scrapedAt: new Date(),
+            sourceType: 'browser' as const,
+          }
+        : await scrapeProduct(parsedRequest.data.url, resolvedMode);
+
     const normalizedData = scrapedProductSchema.parse(data) as ScrapedProduct;
     const finalMode = normalizedData.sourceType ?? (resolvedMode === 'auto' ? 'http' : resolvedMode);
 
