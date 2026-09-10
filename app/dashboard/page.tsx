@@ -5,6 +5,7 @@ import { Box, Typography, Grid, Paper, Skeleton } from '@mui/material';
 import { useCurrentUserProducts } from '@/hooks/useCurrentUserProducts';
 import { useCurrentUserFavorites } from '@/hooks/useCurrentUserFavorites';
 import StatsCards from '@/components/dashboard/StatsCards';
+import ScraperMvpVersion from '@/components/dashboard/ScraperMvpVersion';
 import ProductList from '@/components/products/ProductList';
 import type { DashboardStats } from '@/types';
 
@@ -62,6 +63,11 @@ export default function DashboardPage() {
       {/* Stats Cards */}
       <Box sx={{ mb: 4 }}>
         <StatsCards stats={stats} loading={loading} />
+      </Box>
+
+      {/* Scraper MVP Test Section */}
+      <Box sx={{ mb: 4 }}>
+        <ScraperMvpVersion />
       </Box>
 
       {/* Price Drops Section */}
